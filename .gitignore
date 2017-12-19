@@ -1,2 +1,5 @@
 # For MAC
 .DS_Store
+
+aws/lambda/__pycache__
+aws/lambda/*.py[co]
