@@ -1,11 +1,18 @@
 ---
 # roles/common/tasks/main.yml
 - name: 時刻をJSTに変更
-  file: src=/usr/share/zoneinfo/Asia/Tokyo path=/etc/localtime state=link force=yes
+  file:
+    src: /usr/share/zoneinfo/Asia/Tokyo
+    path: /etc/localtime
+    state: link
+    force: yes
   changed_when: false
 
 - name: 再起動後もJSTとなるように変更
-  replace: dest=/etc/sysconfig/clock regexp='"UTC"' replace='"Asia/Tokyo"'
+  replace:
+    dest: /etc/sysconfig/clock 
+    regexp: '"UTC"'
+    replace: '"Asia/Tokyo"'
   changed_when: false
 
 - name: EC2 メタデータ取得
@@ -22,4 +29,5 @@
   register: ec2_tags
 
 - name: ホスト名変更
-  hostname: name='{{ ec2_tags.tags.Name }}-{{ env_name }}'
+  hostname:
+    name: '{{ ec2_tags.tags.Name }}-{{ env_name }}'
