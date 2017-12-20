@@ -14,4 +14,4 @@ script:
   - popd
   - ansible-lint ansible/site.yml
   - pylint ansible/inventories/ec2.py
-  #- cd ansible/inventories && python -m unittest tests.test_ec2 -v
+  - cd ansible/inventories && python -m unittest tests.test_ec2 -v

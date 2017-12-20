@@ -3,8 +3,8 @@ Dynamic Inventry
 """
 # coding: utf-8
 
-import boto3
 import os
+import boto3
 
 AWS_REGION = 'ap-northeast-1'
 AWS_ENV = 'dev'
