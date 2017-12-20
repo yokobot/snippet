@@ -1,0 +1,6 @@
+---
+# ec2.yml
+- hosts: ec2-instance
+  become: yes
+  roles:
+    - common
