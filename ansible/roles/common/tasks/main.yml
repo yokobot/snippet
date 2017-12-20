@@ -10,7 +10,7 @@
 
 - name: 再起動後もJSTとなるように変更
   replace:
-    dest: /etc/sysconfig/clock 
+    dest: /etc/sysconfig/clock
     regexp: '"UTC"'
     replace: '"Asia/Tokyo"'
   changed_when: false

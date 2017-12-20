@@ -4,7 +4,7 @@ git:
 python:
   - "3.6"
 install:
-  - pip install ansible
+  - pip install ansible pylint
 before_script:
   - pushd ../
   - git clone https://github.com/willthames/ansible-lint.git
@@ -14,3 +14,4 @@ script:
   - popd
   - echo 'test.'
   - ansible-lint ansible/site.yml
+  - pylint ansible/inventories/ec2.py
