@@ -16,7 +16,7 @@ class Ec2Instances:
         """
         init
         """
-        session = Session(profile_name='ghe-techtools')
+        session = Session(profile_name='my_profile_name')
         self.client = session.client(
             'ec2',
             region_name=AWS_REGION
