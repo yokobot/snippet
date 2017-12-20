@@ -12,4 +12,5 @@ before_script:
   - export PATH=$PATH:`pwd`/ansible-lint/bin
 script:
   - popd
-  - ansible-lint site.yml
+  - echo 'test.'
+  - ansible-lint ansible/site.yml
