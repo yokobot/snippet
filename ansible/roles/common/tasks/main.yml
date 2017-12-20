@@ -20,7 +20,6 @@
     resource: '{{ ansible_ec2_instance_id }}'
     state: list
   register: ec2_tags
-  always_run: yes
 
 - name: ホスト名変更
   hostname: name='{{ ec2_tags.tags.Name }}-{{ env_name }}'

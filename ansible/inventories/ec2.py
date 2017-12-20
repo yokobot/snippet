@@ -3,10 +3,8 @@ Dynamic Inventry
 """
 # coding: utf-8
 
-import boto3
+from boto3.session import Session
 
-KEY_ID = 'hoge'
-SEC_KEY = 'fuga'
 AWS_REGION = 'ap-northeast-1'
 AWS_ENV = 'dev'
 
@@ -18,10 +16,9 @@ class Ec2Instances:
         """
         init
         """
-        self.client = boto3.client(
+        session = Session(profile_name='ghe-techtools')
+        self.client = session.client(
             'ec2',
-            aws_access_key_id=KEY_ID,
-            aws_secret_access_key=SEC_KEY,
             region_name=AWS_REGION
         )
         self.target_hosts = []
