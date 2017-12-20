@@ -1,8 +1,5 @@
 # For MAC
 .DS_Store
 
-aws/lambda/__pycache__
-aws/lambda/*.py[co]
-
-ansible/__pycache__
-ansible/*.py[co]
+# For Python 
+*.py[co]
