@@ -48,26 +48,30 @@ class TestConsoleLoginCheck(unittest.TestCase):
         ]
         obj = ConsoleLoginCheck()
         obj.cloudtrail.lookup_events = Mock(
-            return_value=[
-                {
-                    "userIdentity": {
-                        "type": "IAMUser",
-                        "userName": "t-yokoyama"
-                    },
-                    "eventTime": test_time,
-                    "awsRegion": "ap-northeast-1",
-                    "sourceIPAddress": "133.13.13.133",
-                    "additionalEventData": {
-                        "MFAUsed": "Yes"
-                    },
-                    "responseElements": {
-                        "ConsoleLogin": "Success"
-                    },
-                    "eventName": "ConsoleLogin"
-                }
-            ]
+            return_value={
+                'Events': [
+                    {
+                        "userIdentity": {
+                            "type": "IAMUser",
+                            "userName": "t-yokoyama"
+                        },
+                        "eventTime": test_time,
+                        "awsRegion": "ap-northeast-1",
+                        "sourceIPAddress": "133.13.13.133",
+                        "additionalEventData": {
+                            "MFAUsed": "Yes"
+                        },
+                        "responseElements": {
+                            "ConsoleLogin": "Success"
+                        },
+                        "eventName": "ConsoleLogin"
+                    }
+                ]
+            }
         )
-        actual = obj.parse_cloud_trail()
+        obj.parse_cloud_trail()
+        actual = obj.response_array
+        print(actual)
         self.assertEqual(expected, actual)
 
 if __name__ == '__main__':
