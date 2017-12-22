@@ -3,6 +3,7 @@ AWS Management Console Login Check
 """
 # coding: utf-8
 
+import os
 import json
 from datetime import datetime
 from datetime import timedelta
@@ -29,7 +30,7 @@ class ConsoleLoginCheck:
                     'AttributeValue': 'ConsoleLogin'
                 },
             ],
-            StartTime=datetime.now() - timedelta(hours=1, minutes=10),
+            StartTime=datetime.now() - timedelta(hours=24, minutes=10),
             EndTime=datetime.now()
         )
         self.response_list = response['Events']
@@ -69,17 +70,18 @@ class ConsoleLoginCheck:
             self.content_list.append(content)
         self.content_list.reverse()
 
+    # pylint: disable=R0201
     def send_to_slack(self, content):
         """
         slack 通知用の関数
         """
-        url = 'https://hooks.slack.com/services/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'
+        url = os.getenv('SLACK_URL')
         payload_dic = {
             "channel":'#alert',
             "username":'AWS',
             "attachments": [
                 {
-                    "fallback": "過去1時間のコンソールログイン記録です",
+                    "fallback": "過去24時間のコンソールログイン記録です",
                     "color": "#36a64f",
                     "author_name": "AWS",
                     "title": content,
@@ -87,14 +89,14 @@ class ConsoleLoginCheck:
             ],
             "icon_emoji":'grin:',
         }
-        headers ={
+        headers = {
             "pragma":"no-cache",
         }
         method = "POST"
         json_data = json.dumps(payload_dic).encode('utf-8')
         request = urllib.request.Request(url, data=json_data, method=method, headers=headers)
         with urllib.request.urlopen(request) as response:
-            response_body = response.read().decode("utf-8")
+            response.read().decode("utf-8")
 
 def lambda_handler(event, context):
     """
