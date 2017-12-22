@@ -13,7 +13,8 @@ class ConsoleLoginCheck:
     """
     def __init__(self):
         self.cloudtrail = boto3.client('cloudtrail', region_name='ap-northeast-1')
-        self.response_array = []
+        self.response_list = []
+        self.content_list = []
 
     def parse_cloud_trail(self):
         """
@@ -29,9 +30,9 @@ class ConsoleLoginCheck:
             StartTime=datetime.now() - timedelta(hours=1, minutes=10),
             EndTime=datetime.now()
         )
-        self.response_array = response['Events']
+        self.response_list = response['Events']
 
-    def make_string(self, arr):
+    def make_string(self):
         """
         メッセージ作成関数
         """
