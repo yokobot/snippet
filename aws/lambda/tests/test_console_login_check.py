@@ -31,20 +31,12 @@ class TestConsoleLoginCheck(unittest.TestCase):
         test_time = datetime.now() - timedelta(hours=1)
         expected = [
             {
-                "userIdentity": {
-                    "type": "IAMUser",
-                    "userName": "t-yokoyama"
-                },
-                "eventTime": test_time,
-                "awsRegion": "ap-northeast-1",
-                "sourceIPAddress": "133.13.13.133",
-                "additionalEventData": {
-                    "MFAUsed": "Yes"
-                },
-                "responseElements": {
-                    "ConsoleLogin": "Success"
-                },
-                "eventName": "ConsoleLogin"
+                "CloudTrailEvent": '{"userIdentity": {"type": "IAMUser","userName": "t-yokoyama"},'
+                                   '"eventTime": %s,"awsRegion": "ap-northeast-1",'
+                                   '"sourceIPAddress": "133.13.13.133",'
+                                   '"additionalEventData": {"MFAUsed": "Yes"},'
+                                   '"responseElements": {"ConsoleLogin": "Success"},'
+                                   '"eventName": "ConsoleLogin"}' % test_time
             }
         ]
         obj = ConsoleLoginCheck()
@@ -52,20 +44,13 @@ class TestConsoleLoginCheck(unittest.TestCase):
             return_value={
                 'Events': [
                     {
-                        "userIdentity": {
-                            "type": "IAMUser",
-                            "userName": "t-yokoyama"
-                        },
-                        "eventTime": test_time,
-                        "awsRegion": "ap-northeast-1",
-                        "sourceIPAddress": "133.13.13.133",
-                        "additionalEventData": {
-                            "MFAUsed": "Yes"
-                        },
-                        "responseElements": {
-                            "ConsoleLogin": "Success"
-                        },
-                        "eventName": "ConsoleLogin"
+                        "CloudTrailEvent": \
+                            '{"userIdentity": {"type": "IAMUser","userName": "t-yokoyama"},'
+                            '"eventTime": %s,"awsRegion": "ap-northeast-1",'
+                            '"sourceIPAddress": "133.13.13.133",'
+                            '"additionalEventData": {"MFAUsed": "Yes"},'
+                            '"responseElements": {"ConsoleLogin": "Success"},'
+                            '"eventName": "ConsoleLogin"}' % test_time
                     }
                 ]
             }
@@ -79,7 +64,7 @@ class TestConsoleLoginCheck(unittest.TestCase):
         """
         make_string test
         """
-        test_time = datetime.now() - timedelta(hours=1)
+        test_time = 'yyyymmddHHMMSS'
         expected = [(
             'ログインユーザ\n'
             'user_name: t-yokoyama\n'
@@ -96,20 +81,12 @@ class TestConsoleLoginCheck(unittest.TestCase):
             return_value={
                 'Events': [
                     {
-                        "userIdentity": {
-                            "type": "IAMUser",
-                            "userName": "t-yokoyama"
-                        },
-                        "eventTime": test_time,
-                        "awsRegion": "ap-northeast-1",
-                        "sourceIPAddress": "133.13.13.133",
-                        "additionalEventData": {
-                            "MFAUsed": "Yes"
-                        },
-                        "responseElements": {
-                            "ConsoleLogin": "Success"
-                        },
-                        "eventName": "ConsoleLogin"
+                        'CloudTrailEvent': \
+                            '{"userIdentity":{"type":"IAMUser","userName":"t-yokoyama"},'
+                            '"eventTime":"yyyymmddHHMMSS","eventName":"ConsoleLogin",'
+                            '"sourceIPAddress":"133.13.13.133",'
+                            '"responseElements":{"ConsoleLogin":"Success"},'
+                            '"additionalEventData":{"MFAUsed":"Yes"}}'
                     }
                 ]
             }
