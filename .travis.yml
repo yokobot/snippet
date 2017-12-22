@@ -11,7 +11,7 @@ before_script:
 script:
   - popd
   - ansible-lint ansible/site.yml
-  - pylint ansible/inventories/ec2.py
-  - cd ansible/inventories && python -m unittest tests.test_ec2 -v
+  - cd ansible/inventories && pylint ec2.py
+  - python -m unittest tests.test_ec2 -v
   - cd ../../aws/lambda/ && pylint console_login_check.py
-  - cd aws/lambda/ && python -m unittest tests.test_console_login_check.py -v
+  - python -m unittest tests.test_console_login_check.py -v
