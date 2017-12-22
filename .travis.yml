@@ -1,6 +1,4 @@
 language: python
-git:
-  submodules: false
 python:
   - "3.6"
 install:
@@ -15,3 +13,5 @@ script:
   - ansible-lint ansible/site.yml
   - pylint ansible/inventories/ec2.py
   - cd ansible/inventories && python -m unittest tests.test_ec2 -v
+  - pylint aws/lambda/console_login_check.py -v
+  - cd aws/lambda/ && python -m unittest tests.test_console_login_check.py -v
