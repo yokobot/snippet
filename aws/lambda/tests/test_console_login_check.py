@@ -95,5 +95,11 @@ class TestConsoleLoginCheck(unittest.TestCase):
         actual = obj.content_list
         self.assertEqual(expected, actual)
 
+    def test_send_to_slack(self):
+        """
+        send_to_slack test
+        """
+        pass # 何を持って OK とするか考える
+
 if __name__ == '__main__':
     unittest.main()
