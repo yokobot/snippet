@@ -57,7 +57,6 @@ class TestConsoleLoginCheck(unittest.TestCase):
         )
         obj.parse_cloud_trail()
         actual = obj.response_list
-        print(actual)
         self.assertEqual(expected, actual)
 
     def test_make_string(self):
@@ -94,7 +93,6 @@ class TestConsoleLoginCheck(unittest.TestCase):
         obj.parse_cloud_trail()
         obj.make_string()
         actual = obj.content_list
-        print(actual)
         self.assertEqual(expected, actual)
 
 if __name__ == '__main__':
