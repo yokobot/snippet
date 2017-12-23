@@ -108,4 +108,3 @@ def lambda_handler(event, context):
     for content in cloud_trail.content_list:
         cloud_trail.send_to_slack(content)
 
-lambda_handler(1, 2)
