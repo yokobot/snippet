@@ -49,4 +49,7 @@ ansible/
 $ ansible-playbook -i inventories/ec2.py site.yml --private-key=pemファイル 
 ```
 
+EC2 READ 権限のある AWS credentials が必要ようなので以下の環境変数に定義する  
 
+- AWS_ACCESS_KEY_ID
+- AWS_SECRET_ACCESS_KEY

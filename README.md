@@ -1,6 +1,8 @@
+[![Build Status](https://travis-ci.org/yokobot/snippet.svg?branch=master)](https://travis-ci.org/yokobot/snippet)
+
 # snippet
 
-## Dir 構成
+## 構成
 
 ```
 snippet/
@@ -12,9 +14,11 @@ snippet/
 
 ### ansible
 ansible/ec2.yml  
+-> AWS 初期構築時に実行する ansible
 
 ### aws/lambda
-TBD  
+aws/lambda/console_login_check.py  
+-> 24 時間以内に AWS アカウントに console login した(試みた)ユーザを slack に通知する lambda function
 
 ### aws/cloudformation
 TBD  

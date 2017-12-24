@@ -1,5 +1,5 @@
 """
-Dynamic Inventry
+Dynamic Inventory
 """
 # coding: utf-8
 
