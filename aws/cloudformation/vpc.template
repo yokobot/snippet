@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Provisioning VPC'
+Parameters:
+    Environment:
+        AllowedValues:
+            - dev
+            - prd
+        Default: 'dev'
+        Description: 'Environment (e.g. dev,prd)'
+        Type: 'String'
+
+Resources:
+    myVPC:
+        Type: 'AWS::EC2::VPC'
+        Properties: 
+            CidrBlock: '10.0.0.0/16'
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - 'Test'
+                        - !Ref Environment
+
