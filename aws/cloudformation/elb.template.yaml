@@ -1,0 +1,83 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Provisioning ELB'
+
+Outputs:
+    ELBSGID:
+        Description: 'ELB SecurityGroup ID'
+        Value:
+            !Ref ELBSecurityGroup
+        Export:
+            Name: 'ELBSGID'
+    ELBID:
+        Description: 'ELB ID'
+        Value:
+            !Ref ELB
+        Export:
+            Name: 'ELBID'
+
+Parameters:
+    TagName:
+        Description: 'For Name Tag'
+        Type: 'String'
+    Environment:
+        AllowedValues:
+            - dev
+            - prd
+        Default: 'dev'
+        Description: 'Environment (e.g. dev,prd)'
+        Type: 'String'
+
+Resources:
+    ELBSecurityGroup:
+        Type: 'AWS::EC2::SecurityGroup'
+        Properties:
+            GroupDescription: !Join
+                - '-'
+                - - !Ref TagName
+                  - 'vpc'
+                  - !Ref Environment
+            VpcId: !ImportValue VPCID
+            SecurityGroupIngress:
+                - IpProtocol: tcp
+                  FromPort: '80'
+                  ToPort: '80'
+                  CidrIp: 0.0.0.0/0
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - 'elb'
+                        - 'sg'
+                        - !Ref Environment
+    ELB:
+        Type: 'AWS::ElasticLoadBalancing::LoadBalancer'
+        Properties:
+            Subnets:
+                - !ImportValue SubnetAID
+                - !ImportValue SubnetCID 
+            Listeners:
+                - LoadBalancerPort: '80'
+                  InstancePort: '80'
+                  Protocol: 'TCP'
+                  InstanceProtocol: 'TCP'
+            HealthCheck:
+                Target: 'TCP:80'
+                Interval: '30'
+                HealthyThreshold: '2'
+                Timeout: '5'
+                UnhealthyThreshold: '2'
+            ConnectionDrainingPolicy:
+                Enabled: 'True'
+                Timeout: '300'
+            ConnectionSettings:
+                IdleTimeout: '60'
+            SecurityGroups:
+                - !Ref ELBSecurityGroup
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                     - '-'
+                     - - !Ref TagName
+                       - 'elb'
+                       - !Ref Environment

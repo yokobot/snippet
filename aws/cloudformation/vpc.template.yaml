@@ -1,6 +1,26 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Provisioning VPC'
 
+Outputs:
+    VPCID:
+        Description: 'VPC ID'
+        Value:
+            !Ref VPC
+        Export:
+            Name: 'VPCID'
+    SubnetAID:
+        Description: 'SubnetA ID'
+        Value:
+            !Ref SubnetA
+        Export:
+            Name: 'SubnetAID'
+    SubnetCID:
+        Description: 'SubnetC ID'
+        Value:
+            !Ref SubnetC
+        Export:
+            Name: 'SubnetCID'
+
 Parameters:
     TagName:
         Description: 'For Name Tag'
