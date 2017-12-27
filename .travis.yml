@@ -1,7 +1,10 @@
 language: python
 python:
   - "3.6"
-cache: pip
+cache: 
+  pip: true
+  directories:
+  - node_modules  
 install:
   - pip install ansible pylint boto3
 before_script:
@@ -9,6 +12,7 @@ before_script:
   - git clone https://github.com/willthames/ansible-lint.git
   - export PYTHONPATH=$PYTHONPATH:`pwd`/ansible-lint/lib
   - export PATH=$PATH:`pwd`/ansible-lint/bin
+  - npm install -g cfn-lint
 script:
   - popd
   - ansible-lint ansible/site.yml
@@ -16,3 +20,4 @@ script:
   - python -m unittest tests.test_ec2 -v
   - cd ../../aws/lambda/ && pylint console_login_check.py
   - python -m unittest tests.test_console_login_check -v
+  - cd ../../aws/cloudformation && cfn-lint validate vpc.template.yaml
