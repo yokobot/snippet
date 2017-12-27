@@ -1,6 +1,10 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Provisioning VPC'
+
 Parameters:
+    TagName:
+        Description: 'For Name Tag'
+        Type: 'String'
     Environment:
         AllowedValues:
             - dev
@@ -10,7 +14,7 @@ Parameters:
         Type: 'String'
 
 Resources:
-    myVPC:
+    VPC:
         Type: 'AWS::EC2::VPC'
         Properties: 
             CidrBlock: '10.0.0.0/16'
@@ -18,6 +22,86 @@ Resources:
                 - Key: 'Name'
                   Value: !Join
                       - '-'
-                      - - 'Test'
+                      - - !Ref TagName
+                        - 'vpc'
                         - !Ref Environment
-
+    SubnetA:
+        Type: 'AWS::EC2::Subnet'
+        Properties:
+            CidrBlock: '10.0.1.0/24'
+            AvailabilityZone: 'ap-northeast-1a'
+            VpcId:
+                !Ref VPC
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - 'subnetA'
+                        - !Ref Environment
+    SubnetC:
+        Type: 'AWS::EC2::Subnet'
+        Properties:
+            CidrBlock: '10.0.2.0/24'
+            AvailabilityZone: 'ap-northeast-1c'
+            VpcId:
+                !Ref VPC
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - 'subnetC'
+                        - !Ref Environment
+    InternetGateway:
+        Type: 'AWS::EC2::InternetGateway'
+        Properties:
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - 'igw'
+                        - !Ref Environment
+    VPCGatewayAttachment:
+        Type: 'AWS::EC2::VPCGatewayAttachment'
+        Properties:
+            VpcId:
+                !Ref VPC
+            InternetGatewayId:
+                !Ref InternetGateway
+    RouteTable:
+        Type: 'AWS::EC2::RouteTable'
+        Properties:
+            VpcId:
+                !Ref VPC
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - 'routetable'
+                        - !Ref Environment
+    Route:
+        Type: 'AWS::EC2::Route'
+        DependsOn: InternetGateway
+        Properties:
+            RouteTableId:
+                !Ref RouteTable
+            DestinationCidrBlock: 0.0.0.0/0
+            GatewayId:
+                !Ref InternetGateway
+    SubnetRouteA:
+        Type: 'AWS::EC2::SubnetRouteTableAssociation'
+        Properties: 
+            RouteTableId:
+                !Ref RouteTable
+            SubnetId:
+                !Ref SubnetA
+    SubnetRouteC:
+        Type: 'AWS::EC2::SubnetRouteTableAssociation'
+        Properties:
+            RouteTableId:
+                !Ref RouteTable
+            SubnetId:
+                !Ref SubnetC
