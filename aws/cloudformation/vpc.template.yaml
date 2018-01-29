@@ -8,29 +8,42 @@ Outputs:
             !Ref VPC
         Export:
             Name: 'VPCID'
-    SubnetAID:
-        Description: 'SubnetA ID'
+    SubnetPublicAID:
+        Description: 'SubnetPublicA ID'
         Value:
-            !Ref SubnetA
+            !Ref SubnetPublicA
         Export:
-            Name: 'SubnetAID'
-    SubnetCID:
-        Description: 'SubnetC ID'
+            Name: 'SubnetPublicAID'
+    SubnetPublicCID:
+        Description: 'SubnetPublicC ID'
         Value:
-            !Ref SubnetC
+            !Ref SubnetPublicC
         Export:
-            Name: 'SubnetCID'
+            Name: 'SubnetPublicCID'
+    SubnetInternalAID:
+        Description: 'SubnetInternalA ID'
+        Value:
+            !Ref SubnetInternalA
+        Export:
+            Name: 'SubnetInternalAID'
+    SubnetInternalCID:
+        Description: 'SubnetInternalC ID'
+        Value:
+            !Ref SubnetInternalC
+        Export:
+            Name: 'SubnetInternalCID'
 
 Parameters:
     TagName:
-        Description: 'For Name Tag'
+        Description: 'For Name Tag. ex "sjp"'
         Type: 'String'
     Environment:
         AllowedValues:
             - dev
+            - stg
             - prd
         Default: 'dev'
-        Description: 'Environment (e.g. dev,prd)'
+        Description: 'Environment (e.g. dev, stg, prd)'
         Type: 'String'
 
 Resources:
@@ -45,7 +58,7 @@ Resources:
                       - - !Ref TagName
                         - 'vpc'
                         - !Ref Environment
-    SubnetA:
+    SubnetPublicA:
         Type: 'AWS::EC2::Subnet'
         Properties:
             CidrBlock: '10.0.1.0/24'
@@ -57,9 +70,9 @@ Resources:
                   Value: !Join
                       - '-'
                       - - !Ref TagName
-                        - 'subnetA'
+                        - 'subnet-public-A'
                         - !Ref Environment
-    SubnetC:
+    SubnetPublicC:
         Type: 'AWS::EC2::Subnet'
         Properties:
             CidrBlock: '10.0.2.0/24'
@@ -71,7 +84,35 @@ Resources:
                   Value: !Join
                       - '-'
                       - - !Ref TagName
-                        - 'subnetC'
+                        - 'subnet-public-C'
+                        - !Ref Environment
+    SubnetInternalA:
+        Type: 'AWS::EC2::Subnet'
+        Properties:
+            CidrBlock: '10.0.3.0/24'
+            AvailabilityZone: 'ap-northeast-1a'
+            VpcId:
+                !Ref VPC
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - 'subnet-internal-A'
+                        - !Ref Environment
+    SubnetInternalC:
+        Type: 'AWS::EC2::Subnet'
+        Properties:
+            CidrBlock: '10.0.4.0/24'
+            AvailabilityZone: 'ap-northeast-1c'
+            VpcId:
+                !Ref VPC
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - 'subnet-internal-C'
                         - !Ref Environment
     InternetGateway:
         Type: 'AWS::EC2::InternetGateway'
@@ -90,7 +131,7 @@ Resources:
                 !Ref VPC
             InternetGatewayId:
                 !Ref InternetGateway
-    RouteTable:
+    RouteTablePublic:
         Type: 'AWS::EC2::RouteTable'
         Properties:
             VpcId:
@@ -100,28 +141,133 @@ Resources:
                   Value: !Join
                       - '-'
                       - - !Ref TagName
-                        - 'routetable'
+                        - 'rt'
+                        - 'public'
                         - !Ref Environment
-    Route:
+    RoutePublic:
         Type: 'AWS::EC2::Route'
         DependsOn: InternetGateway
         Properties:
             RouteTableId:
-                !Ref RouteTable
+                !Ref RouteTablePublic
             DestinationCidrBlock: 0.0.0.0/0
             GatewayId:
                 !Ref InternetGateway
-    SubnetRouteA:
+    SubnetPublicRouteA:
         Type: 'AWS::EC2::SubnetRouteTableAssociation'
         Properties: 
             RouteTableId:
-                !Ref RouteTable
+                !Ref RouteTablePublic
             SubnetId:
-                !Ref SubnetA
-    SubnetRouteC:
+                !Ref SubnetPublicA
+    SubnetPublicRouteC:
         Type: 'AWS::EC2::SubnetRouteTableAssociation'
         Properties:
             RouteTableId:
-                !Ref RouteTable
+                !Ref RouteTablePublic
             SubnetId:
-                !Ref SubnetC
+                !Ref SubnetPublicC
+    EipNatA:
+        Type: 'AWS::EC2::EIP'
+        Properties:
+            Domain: vpc
+    NatGatewayA:
+        Type: 'AWS::EC2::NatGateway'
+        Properties:
+            AllocationId:
+                !GetAtt
+                    - EipNatA
+                    - AllocationId
+            SubnetId:
+                !Ref SubnetPublicA
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - 'natgateway'
+                        - 'a'
+                        - !Ref Environment
+    RouteTableInternalA:
+        Type: 'AWS::EC2::RouteTable'
+        Properties:
+            VpcId:
+                !Ref VPC
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - 'rt'
+                        - 'internal'
+                        - 'a'
+                        - !Ref Environment
+    RouteInternalA:
+        Type: 'AWS::EC2::Route'
+        DependsOn:
+            - SubnetInternalRouteA
+        Properties:
+            RouteTableId:
+                !Ref RouteTableInternalA
+            DestinationCidrBlock: 0.0.0.0/0
+            NatGatewayId:
+                !Ref NatGatewayA
+    SubnetInternalRouteA:
+        Type: 'AWS::EC2::SubnetRouteTableAssociation'
+        Properties:
+            RouteTableId:
+                !Ref RouteTableInternalA
+            SubnetId:
+                !Ref SubnetInternalA
+    EipNatC:
+        Type: 'AWS::EC2::EIP'
+        Properties:
+            Domain: vpc
+    NatGatewayC:
+        Type: 'AWS::EC2::NatGateway'
+        Properties:
+            AllocationId:
+                !GetAtt
+                    - EipNatC
+                    - AllocationId
+            SubnetId:
+                !Ref SubnetPublicC
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - 'natgateway'
+                        - 'c'
+                        - !Ref Environment
+    RouteTableInternalC:
+        Type: 'AWS::EC2::RouteTable'
+        Properties:
+            VpcId:
+                !Ref VPC
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - 'rt'
+                        - 'internal'
+                        - 'c'
+                        - !Ref Environment
+    RouteInternalC:
+        Type: 'AWS::EC2::Route'
+        DependsOn:
+            - SubnetInternalRouteC
+        Properties:
+            RouteTableId:
+                !Ref RouteTableInternalC
+            DestinationCidrBlock: 0.0.0.0/0
+            NatGatewayId:
+                !Ref NatGatewayC
+    SubnetInternalRouteC:
+        Type: 'AWS::EC2::SubnetRouteTableAssociation'
+        Properties:
+            RouteTableId:
+                !Ref RouteTableInternalC
+            SubnetId:
+                !Ref SubnetInternalC

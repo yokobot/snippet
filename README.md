@@ -20,7 +20,7 @@ ansible/ec2.yml
   
 ### aws/cloudformation
 aws/cloudformation/vpc.template.yaml  
--> VPC, route-table, internet-gateway, subnet を構築する CFn
+-> VPC, route-table, internet-gateway, nat-gateway, subnet を構築する CFn
   
 aws/cloudformation/elb.template.yaml  
 -> ELB, ELB 用 Security Group を構築する CFn  
