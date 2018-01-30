@@ -2,8 +2,12 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Provisioning ECS For worker instance'
 
 Outputs:
-    EcsWorkerCluster:
-        Value: !Ref 'EcsWorkerCluster'
+    EcsWorkerClusterID:
+        Description: 'EcsWorkerCluster ID'
+        Value:
+            !Ref EcsWorkerCluster
+        Export:
+            Name: 'EcsWorkerClusterID'
 
 Parameters:
     KeyName:
