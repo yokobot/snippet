@@ -2,8 +2,12 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Provisioning ECS For web instance'
 
 Outputs:
-    EcsWebCluster:
-        Value: !Ref 'EcsWebCluster'
+    EcsWebClusterID:
+        Description: 'EcsWebCluster ID'
+        Value:
+            !Ref EcsWebCluster
+        Export:
+            Name: 'EcsWebClusterID'
 
 Parameters:
     KeyName:
