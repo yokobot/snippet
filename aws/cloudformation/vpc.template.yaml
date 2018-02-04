@@ -35,7 +35,7 @@ Outputs:
 
 Parameters:
     TagName:
-        Description: 'For Name Tag. ex "sjp"'
+        Description: 'For Name Tag. ex "myapp"'
         Type: 'String'
     Environment:
         AllowedValues:
@@ -45,6 +45,14 @@ Parameters:
         Default: 'dev'
         Description: 'Environment (e.g. dev, stg, prd)'
         Type: 'String'
+    UseNatGateway:
+        Default: 'no'
+        Description: 'Did you nead Nat Gateway? yes / no.'
+        Type: 'String'
+
+Conditions:
+    CreateNatgateway:
+        !Equals [UseNatGateway, 'yes']
 
 Resources:
     VPC:
@@ -168,10 +176,12 @@ Resources:
             SubnetId:
                 !Ref SubnetPublicC
     EipNatA:
+        Condition: CreateNatgateway
         Type: 'AWS::EC2::EIP'
         Properties:
             Domain: vpc
     NatGatewayA:
+        Condition: CreateNatgateway
         Type: 'AWS::EC2::NatGateway'
         Properties:
             AllocationId:
@@ -189,6 +199,7 @@ Resources:
                         - 'a'
                         - !Ref Environment
     RouteTableInternalA:
+        Condition: CreateNatgateway
         Type: 'AWS::EC2::RouteTable'
         Properties:
             VpcId:
@@ -203,6 +214,7 @@ Resources:
                         - 'a'
                         - !Ref Environment
     RouteInternalA:
+        Condition: CreateNatgateway
         Type: 'AWS::EC2::Route'
         DependsOn:
             - SubnetInternalRouteA
@@ -213,6 +225,7 @@ Resources:
             NatGatewayId:
                 !Ref NatGatewayA
     SubnetInternalRouteA:
+        Condition: CreateNatgateway
         Type: 'AWS::EC2::SubnetRouteTableAssociation'
         Properties:
             RouteTableId:
@@ -220,10 +233,12 @@ Resources:
             SubnetId:
                 !Ref SubnetInternalA
     EipNatC:
+        Condition: CreateNatgateway
         Type: 'AWS::EC2::EIP'
         Properties:
             Domain: vpc
     NatGatewayC:
+        Condition: CreateNatgateway
         Type: 'AWS::EC2::NatGateway'
         Properties:
             AllocationId:
@@ -241,6 +256,7 @@ Resources:
                         - 'c'
                         - !Ref Environment
     RouteTableInternalC:
+        Condition: CreateNatgateway
         Type: 'AWS::EC2::RouteTable'
         Properties:
             VpcId:
@@ -255,6 +271,7 @@ Resources:
                         - 'c'
                         - !Ref Environment
     RouteInternalC:
+        Condition: CreateNatgateway
         Type: 'AWS::EC2::Route'
         DependsOn:
             - SubnetInternalRouteC
@@ -265,6 +282,7 @@ Resources:
             NatGatewayId:
                 !Ref NatGatewayC
     SubnetInternalRouteC:
+        Condition: CreateNatgateway 
         Type: 'AWS::EC2::SubnetRouteTableAssociation'
         Properties:
             RouteTableId:
