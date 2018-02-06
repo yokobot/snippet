@@ -36,6 +36,9 @@ aws/cloudformation/ecs_worker_cluster.template.yaml
 -> 内部処理用の ECS クラスタを構築する CFn  
 -> cluster, SG, autoscale 設定, EC2 起動設定, EC2 ロール  
   
+aws/cloudformation/elasticache.template.yaml  
+-> ElastiCache(Redis), ElastiCache 用 Security Group を構築する CFn 
+  
 ### aws/lambda
 aws/lambda/console_login_check.py  
 -> 24 時間以内に AWS アカウントに console login した(試みた)ユーザを slack に通知する lambda function

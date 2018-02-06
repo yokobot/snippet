@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Provisioning ElastiCache'
+
+Outputs:
+    ELASTICACHECLASTERID:
+        Description: 'ElastiCache Claster ID'
+        Value:
+            !Ref ElasticacheCluster
+        Export:
+            Name: 'ELASTICACHECLASTERID'
+    ELASTICACHECLASTERNEDPOINT:
+        Description: 'ElastiCache Claster Endpoint'
+        Value:
+            !GetAtt ElasticacheCluster.RedisEndpoint.Address
+        Export:
+            Name: 'ELASTICACHECLASTERNEDPOINT'
+
+Parameters:
+    TagName:
+        Description: 'For Name Tag'
+        Type: 'String'
+    Environment:
+        AllowedValues:
+            - dev
+            - stg
+            - prd
+        Default: 'dev'
+        Description: 'Environment (e.g. dev, stg, prd)'
+        Type: 'String'
+
+Resources:
+    ElasticacheSecurityGroup:
+        Type: 'AWS::EC2::SecurityGroup'
+        Properties:
+            GroupDescription: 'Security Group For Elasticache'
+            SecurityGroupIngress:
+                - IpProtocol: 'tcp'
+                  FromPort: '6379'
+                  ToPort: '6379'
+                  CidrIp: '10.0.0.0/16'
+            VpcId: !ImportValue VPCID
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - 'elasticache'
+                        - 'sg'
+                        - !Ref Environment
+    ElasticacheSubnetGroups:
+        Type: 'AWS::ElastiCache::SubnetGroup'
+        Properties:
+            Description: 'Cache Subnet Group'
+            SubnetIds:
+                - !ImportValue SubnetInternalAID
+                - !ImportValue SubnetInternalCID
+    ElasticacheCluster:
+        Type: 'AWS::ElastiCache::CacheCluster'
+        Properties:
+            AutoMinorVersionUpgrade: 'false'
+            Engine: 'redis'
+            CacheNodeType: 'cache.t2.micro'
+            NumCacheNodes: '1'
+            Port: '6379'
+            VpcSecurityGroupIds:
+                - !Ref ElasticacheSecurityGroup
+            CacheSubnetGroupName: !Ref ElasticacheSubnetGroups
+            #AZMode: "cross-az"
+            #PreferredAvailabilityZones:
+            #    - 'ap-northeast-1a'
+            #    - 'ap-northeast-1c'
+            #    - 'ap-northeast-1d'
+            #EngineVersion: '3.2.10'
