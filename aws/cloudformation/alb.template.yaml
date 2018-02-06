@@ -21,6 +21,12 @@ Parameters:
         Default: 'dev'
         Description: 'Environment (e.g. dev, stg, prd)'
         Type: 'String'
+    MyIp:
+        Description: 'My source ip adress. xxx.xxx.xxx.xxx/32'
+        Type: 'String'
+    VPCID:
+        Description: 'which dou you use VPC?'
+        Type: 'AWS::EC2::VPC::Id'
 
 Conditions:
     CreateProdResources: !Equals [ !Ref Environment, prd ]
@@ -98,13 +104,13 @@ Resources:
         Type: 'AWS::EC2::SecurityGroup'
         Properties:
             GroupDescription: 'Security Group For ALB'
-            VpcId: !ImportValue VPCID
+            VpcId: !Ref VPCID
             SecurityGroupIngress:
             - IpProtocol: tcp
               FromPort: '80'
               ToPort: '80'
               CidrIp:
-                  !If [ 'CreateProdResources', '0.0.0.0/0', '10.0.0.0/16' ]
+                  !If [ 'CreateProdResources', '0.0.0.0/0', !Ref MyIp ]
             Tags:
                 - Key: 'Name'
                   Value: !Join
@@ -131,8 +137,8 @@ Resources:
             SecurityGroups:
             - !Ref SgALB
             Subnets:
-            - !ImportValue SubnetAID
-            - !ImportValue SubnetCID
+            - !ImportValue SubnetPublicAID
+            - !ImportValue SubnetPublicCID
             Tags:
                 - Key: 'Name'
                   Value: !Join
