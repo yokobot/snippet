@@ -76,8 +76,9 @@ class ConsoleLoginCheck:
         slack 通知用の関数
         """
         url = os.getenv('SLACK_URL')
+        channel = os.getenv('SLACK_CHANNEL')
         payload_dic = {
-            "channel":'#alert',
+            "channel":channel,
             "username":'AWS',
             "attachments": [
                 {
