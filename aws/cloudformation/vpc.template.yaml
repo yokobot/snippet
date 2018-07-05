@@ -49,9 +49,6 @@ Parameters:
         Default: 'no'
         Description: 'Did you nead Nat Gateway? yes / no.'
         Type: 'String'
-        AllowedValues:
-            - yes
-            - no
     CidrBlock:
         Description: 'What is the second octet in cidr block.'
         Default: '0'
@@ -62,7 +59,7 @@ Parameters:
         Type: 'String' 
         AllowedValues:
             - ap-northeast-1
-            - us-east-1'
+            - us-east-1
 
 Conditions:
     CreateNatgateway:
@@ -72,6 +69,8 @@ Resources:
     VPC:
         Type: 'AWS::EC2::VPC'
         Properties: 
+            EnableDnsSupport: true
+            EnableDnsHostnames: true
             CidrBlock: !Join
                 - ''
                 - - '10.'
@@ -92,7 +91,10 @@ Resources:
                 - - '10.'
                   - !Ref CidrBlock
                   - '.1.0/24'
-            AvailabilityZone: 'ap-northeast-1a'
+            AvailabilityZone: !Join
+                - ''
+                - - !Ref SelectRegion
+                  - 'a'
             VpcId:
                 !Ref VPC
             Tags:
@@ -110,7 +112,10 @@ Resources:
                 - - '10.'
                   - !Ref CidrBlock
                   - '.2.0/24'
-            AvailabilityZone: 'ap-northeast-1c'
+            AvailabilityZone: !Join
+                - ''
+                - - !Ref SelectRegion
+                  - 'c'
             VpcId:
                 !Ref VPC
             Tags:
@@ -128,7 +133,10 @@ Resources:
                 - - '10.'
                   - !Ref CidrBlock
                   - '.3.0/24'
-            AvailabilityZone: 'ap-northeast-1a'
+            AvailabilityZone: !Join
+                - ''
+                - - !Ref SelectRegion
+                  - 'a'
             VpcId:
                 !Ref VPC
             Tags:
@@ -146,7 +154,10 @@ Resources:
                 - - '10.'
                   - !Ref CidrBlock
                   - '.4.0/24'
-            AvailabilityZone: 'ap-northeast-1c'
+            AvailabilityZone: !Join
+                - ''
+                - - !Ref SelectRegion
+                  - 'c'
             VpcId:
                 !Ref VPC
             Tags:
