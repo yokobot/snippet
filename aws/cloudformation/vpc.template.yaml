@@ -49,6 +49,20 @@ Parameters:
         Default: 'no'
         Description: 'Did you nead Nat Gateway? yes / no.'
         Type: 'String'
+        AllowedValues:
+            - yes
+            - no
+    CidrBlock:
+        Description: 'What is the second octet in cidr block.'
+        Default: '0'
+        Type: 'String'
+    SelectRegion:
+        Description: 'select Rrgion.'
+        Default: 'ap-northeast-1'
+        Type: 'String' 
+        AllowedValues:
+            - ap-northeast-1
+            - us-east-1'
 
 Conditions:
     CreateNatgateway:
@@ -58,7 +72,11 @@ Resources:
     VPC:
         Type: 'AWS::EC2::VPC'
         Properties: 
-            CidrBlock: '10.0.0.0/16'
+            CidrBlock: !Join
+                - ''
+                - - '10.'
+                  - !Ref CidrBlock
+                  - '.0.0/16'
             Tags:
                 - Key: 'Name'
                   Value: !Join
@@ -69,7 +87,11 @@ Resources:
     SubnetPublicA:
         Type: 'AWS::EC2::Subnet'
         Properties:
-            CidrBlock: '10.0.1.0/24'
+            CidrBlock: !Join
+                - ''
+                - - '10.'
+                  - !Ref CidrBlock
+                  - '.1.0/24'
             AvailabilityZone: 'ap-northeast-1a'
             VpcId:
                 !Ref VPC
@@ -83,7 +105,11 @@ Resources:
     SubnetPublicC:
         Type: 'AWS::EC2::Subnet'
         Properties:
-            CidrBlock: '10.0.2.0/24'
+            CidrBlock: !Join
+                - ''
+                - - '10.'
+                  - !Ref CidrBlock
+                  - '.2.0/24'
             AvailabilityZone: 'ap-northeast-1c'
             VpcId:
                 !Ref VPC
@@ -97,7 +123,11 @@ Resources:
     SubnetInternalA:
         Type: 'AWS::EC2::Subnet'
         Properties:
-            CidrBlock: '10.0.3.0/24'
+            CidrBlock: !Join
+                - ''
+                - - '10.'
+                  - !Ref CidrBlock
+                  - '.3.0/24'
             AvailabilityZone: 'ap-northeast-1a'
             VpcId:
                 !Ref VPC
@@ -111,7 +141,11 @@ Resources:
     SubnetInternalC:
         Type: 'AWS::EC2::Subnet'
         Properties:
-            CidrBlock: '10.0.4.0/24'
+            CidrBlock: !Join
+                - ''
+                - - '10.'
+                  - !Ref CidrBlock
+                  - '.4.0/24'
             AvailabilityZone: 'ap-northeast-1c'
             VpcId:
                 !Ref VPC
