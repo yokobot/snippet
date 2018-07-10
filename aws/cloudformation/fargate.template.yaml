@@ -1,0 +1,29 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Provisioning fagate instance'
+
+Outputs:
+    ALBID:
+        Description: 'ALB ID'
+        Value:
+            !Ref ALB
+        Export:
+            Name: 'ALBID'
+
+Parameters:
+    TagName:
+        Description: 'For Name Tag'
+        Type: 'String'
+    Environment:
+        AllowedValues:
+            - dev
+            - stg
+            - prd
+        Default: 'dev'
+        Description: 'Environment (e.g. dev, stg, prd)'
+        Type: 'String'
+
+Conditions:
+    CreateProdResources: !Equals [ !Ref Environment, prd ]
+
+Resources:
+    

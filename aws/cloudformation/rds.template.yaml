@@ -1,0 +1,92 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Provisioning RDS instance.'
+
+Outputs:
+    DBENDPOINT:
+        Description: 'RDS endpoint'
+        Value:
+            !GetAtt DBinstance.Endpoint.Address
+        Export:
+            Name: 'DBENDPOINT'
+
+Parameters:
+    TagName:
+        Description: 'For Name Tag'
+        Type: 'String'
+    Environment:
+        AllowedValues:
+            - dev
+            - stg
+            - prd
+        Default: 'dev'
+        Description: 'Environment (e.g. dev, stg, prd)'
+        Type: 'String'
+    InternalIp:
+        Default: '10.0.0.0/16'
+        Description: 'Source IP cidr.'
+        Type: 'String'
+    DBInstancerName:
+        Default: 'postgres'
+        Description: 'DB instance Identifier'
+        Type: 'String'
+    DBName:
+        Default: 'postgres'
+        Description: 'Data base name'
+        Type: 'String'
+    DBInstanceType:
+        Description: 'DB instance type'
+        Type: 'String'
+        Default: 'db.t2.small'
+        AllowedValues: ['db.t2.micro', 'db.t2.small', 'db.t2.medium', 'db.t2.large' ]
+        ConstraintDescription: 'Please choose a valid instance type.'
+    DBUser:
+        Default: 'postgres'
+        Description: 'DB master user name'
+        Type: 'String'
+    DBPassword:
+        Default: 'postgres'
+        Description: 'DB master password'
+        Type: 'String'
+    StorageSize:
+        Default: '5'
+        Description: 'DB Storage size'
+        Type: 'String'
+
+Resources:
+    FrontDBSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: 'DB Security Group'
+            VpcId: !ImportValue VPCID
+    DBSecurityGroupInternalinbound:
+        Type: AWS::EC2::SecurityGroupIngress
+        Properties:
+            GroupId: !Ref FrontDBSecurityGroup
+            IpProtocol: 'tcp'
+            FromPort: '5432'
+            ToPort: '5432'
+            CidrIp: !Ref InternalIp
+    DBSubnetGroups:
+        Type: AWS::RDS::DBSubnetGroup
+        Properties: 
+            DBSubnetGroupDescription: !Ref TagName
+            DBSubnetGroupName: !Ref TagName
+            SubnetIds:
+                - !ImportValue SubnetInternalAID
+                - !ImportValue SubnetInternalCID
+    DBinstance:
+        Type: AWS::RDS::DBInstance
+        Properties:
+            AllocatedStorage: !Ref StorageSize
+            DBInstanceIdentifier: !Ref DBInstancerName
+            DBName: !Ref DBName
+            DBInstanceClass: !Ref DBInstanceType
+            Engine: postgres
+            EngineVersion: 9.6.8
+            MasterUsername: !Ref DBUser
+            MasterUserPassword: !Ref DBPassword
+            PubliclyAccessible: false
+            MultiAZ: false
+            DBSubnetGroupName: !Ref DBSubnetGroups
+            VPCSecurityGroups:
+                - !GetAtt FrontDBSecurityGroup.GroupId

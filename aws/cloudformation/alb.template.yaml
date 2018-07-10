@@ -116,12 +116,19 @@ Resources:
                   Value: !Join
                       - '-'
                       - - !Ref TagName
+                        - 'alb'
                         - 'sg'
                         - !Ref Environment
     ALB:
         Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
         Properties:
             Scheme: 'internet-facing'
+            Name:
+                !Join
+                    - '-'
+                    - - !Ref TagName
+                      - 'alb'
+                      - !Ref Environment
             LoadBalancerAttributes:
                 !If
                     - CreateProdResources
@@ -144,4 +151,5 @@ Resources:
                   Value: !Join
                      - '-'
                      - - !Ref TagName
+                       - 'alb'
                        - !Ref Environment
