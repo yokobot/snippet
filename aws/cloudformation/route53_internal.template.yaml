@@ -1,6 +1,14 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Provisioning internal dns record'
 
+Outputs:
+    HOSTETDZONEID:
+        Description: 'Route53 hosted zone ID'
+        Value:
+            !Ref HostedZone
+        Export:
+            Name: 'HOSTETDZONEID'
+
 Parameters:
     TagName:
         Description: 'For Name Tag'
@@ -27,16 +35,3 @@ Resources:
             VPCs:
                 - VPCId: !ImportValue VPCID
                   VPCRegion: !ImportValue RegionName
-    RdsDnsRecord:
-        Type: AWS::Route53::RecordSet
-        Properties:
-            HostedZoneId: !Ref HostedZone
-            Name: !Join
-                - '.'
-                - - 'db'
-                  - !Ref TagName
-                  - 'net'
-            Type: CNAME
-            TTL: '900'
-            ResourceRecords:
-                - !ImportValue DBENDPOINT 

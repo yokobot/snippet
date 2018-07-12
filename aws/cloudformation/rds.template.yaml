@@ -90,3 +90,17 @@ Resources:
             DBSubnetGroupName: !Ref DBSubnetGroups
             VPCSecurityGroups:
                 - !GetAtt FrontDBSecurityGroup.GroupId
+    RdsDnsRecord:
+        Type: AWS::Route53::RecordSet
+        Properties:
+            HostedZoneId: !ImportValue HOSTETDZONEID
+            Name: !Join
+                - '.'
+                - - 'db'
+                  - !Ref Environment
+                  - !Ref TagName
+                  - 'net'
+            Type: CNAME
+            TTL: '900'
+            ResourceRecords:
+                - !GetAtt DBinstance.Endpoint.Address

@@ -1,6 +1,14 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Provisioning bastion ec2 instance.'
 
+Outputs:
+    BASTIONID:
+        Description: 'bastion instance ID'
+        Value:
+            !Ref BastionInstance
+        Export:
+            Name: 'BASTIONID'
+
 Parameters:
     KeyName:
         Type: 'AWS::EC2::KeyPair::KeyName'

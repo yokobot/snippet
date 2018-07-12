@@ -1,0 +1,33 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Provisioning ECS For worker instance'
+
+Outputs:
+    FARFGATECLUSTERID:
+        Description: 'Fargate Cluster ID'
+        Value:
+            !Ref FargateCluster
+        Export:
+            Name: 'FARFGATECLUSTERID'
+
+Parameters:
+    TagName:
+        Description: 'For Name Tag'
+        Type: 'String'
+    Environment:
+        AllowedValues:
+            - dev
+            - stg
+            - prd
+        Default: 'dev'
+        Description: 'Environment (e.g. dev, stg, prd)'
+        Type: 'String'
+
+Resources:
+    FargateCluster:
+        Type: "AWS::ECS::Cluster"
+        Properties:
+            ClusterName: !Join
+                - '-'
+                - - !Ref TagName
+                  - 'fargate'
+                  - !Ref Environment

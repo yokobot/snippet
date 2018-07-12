@@ -68,7 +68,7 @@ Parameters:
             - us-east-1
 
 Conditions:
-    CreateNatgateway: !Equals [ !Ref UseNatGateway, yes ]
+    CreateNatgateway: !Equals [ !Ref UseNatGateway, 'yes' ]
 
 Resources:
     VPC:
