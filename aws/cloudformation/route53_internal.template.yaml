@@ -1,0 +1,37 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Provisioning internal dns record'
+
+Outputs:
+    HOSTETDZONEID:
+        Description: 'Route53 hosted zone ID'
+        Value:
+            !Ref HostedZone
+        Export:
+            Name: 'HOSTETDZONEID'
+
+Parameters:
+    TagName:
+        Description: 'For Name Tag'
+        Type: 'String'
+    Environment:
+        AllowedValues:
+            - dev
+            - stg
+            - prd
+        Default: 'dev'
+        Description: 'Environment (e.g. dev, stg, prd)'
+        Type: 'String'
+
+Resources:
+    HostedZone:
+        Type: AWS::Route53::HostedZone
+        Properties: 
+            HostedZoneConfig:
+                Comment: 'internal dns record.'
+            Name: !Join
+                - '.'
+                - - !Ref TagName
+                  - 'net'
+            VPCs:
+                - VPCId: !ImportValue VPCID
+                  VPCRegion: !ImportValue RegionName

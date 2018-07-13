@@ -32,6 +32,12 @@ Outputs:
             !Ref SubnetInternalC
         Export:
             Name: 'SubnetInternalCID'
+    RegionName:
+        Description: 'Region name'
+        Value:
+            !Ref SelectRegion
+        Export:
+            Name: 'RegionName'
 
 Parameters:
     TagName:
@@ -47,7 +53,7 @@ Parameters:
         Type: 'String'
     UseNatGateway:
         Default: 'no'
-        Description: 'Did you nead Nat Gateway? yes / no.'
+        Description: 'Did you need Nat Gateway? yes / no.'
         Type: 'String'
     CidrBlock:
         Description: 'What is the second octet in cidr block.'
@@ -62,8 +68,7 @@ Parameters:
             - us-east-1
 
 Conditions:
-    CreateNatgateway:
-        !Equals [UseNatGateway, 'yes']
+    CreateNatgateway: !Equals [ !Ref UseNatGateway, 'yes' ]
 
 Resources:
     VPC:

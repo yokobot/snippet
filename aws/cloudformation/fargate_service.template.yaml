@@ -1,0 +1,184 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Provisioning ECS For worker instance'
+
+Outputs:
+    FARFGATESERVICEID:
+        Description: 'Fargate Cluster ID'
+        Value:
+            !Ref FargateService
+        Export:
+            Name: 'FARFGATESERVICEID'
+
+Parameters:
+    TagName:
+        Description: 'For Name Tag'
+        Type: 'String'
+    Environment:
+        AllowedValues:
+            - dev
+            - stg
+            - prd
+        Default: 'dev'
+        Description: 'Environment (e.g. dev, stg, prd)'
+        Type: 'String'
+    DesiredCount:
+        Description: 'Container DesiredCount'
+        Default: '1'
+        Type: 'String'
+    ImageName:
+        Description: 'Docker image name'
+        Default: 'elixir'
+        Type: 'String'
+
+Resources:
+    FargateContainerSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupDescription: Access to the Fargate containers
+            VpcId: !ImportValue VPCID
+            SecurityGroupIngress:
+                #Ingressルールかく
+                CidrIp: 10.0.0.0/16 
+                Description: from internal NW
+                FromPort: 0
+                IpProtocol: -1
+                ToPort: 65535
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                     - '-'
+                     - - !Ref TagName
+                       - 'fargate-sg'
+                       - !Ref Environment            
+    FargateTargerGroup:
+        Type: AWS::ElasticLoadBalancingV2::TargetGroup
+        Properties:
+            HealthCheckIntervalSeconds: 10
+            HealthCheckPath: '/healthcheck'
+            HealthCheckPort: 4001
+            HealthCheckProtocol: HTTP
+            HealthCheckTimeoutSeconds: 5
+            HealthyThresholdCount: 2
+            Name: !Join
+                - '-'
+                - - !Ref TagName
+                  - 'tg'
+                  - !Ref Environment
+            Port: 4001
+            Protocol: HTTP
+            UnhealthyThresholdCount: 3
+            VpcId: !ImportValue VPCID
+            TargetType: ip
+    LoadBalancerListener:
+        Type: AWS::ElasticLoadBalancingV2::Listener
+        Properties:
+            LoadBalancerArn: !ImportValue ALBID
+            Port: 4001
+            Protocol: HTTP
+            DefaultActions:
+                - Type: forward
+                  TargetGroupArn: !Ref FargateTargerGroup
+    FargateRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Statement:
+                    - Effect: 'Allow'
+                      Principal:
+                          Service: [ecs.amazonaws.com]
+                      Action: ['sts:AssumeRole']
+            Path: /
+            Policies:
+                - PolicyName: 'fargate-service'
+                  PolicyDocument:
+                      Statement:
+                          - Effect: 'Allow'
+                            Action: ['ec2:*', 'logs:CreateLogStream', 'logs:PutLogEvents', 'ecr:*']
+                            Resource: '*'
+    FargateExcutionRole:
+        Type: AWS::IAM::Role
+        Properties:
+            Path: /
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service: ecs-tasks.amazonaws.com
+                      Action: sts:AssumeRole
+            ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+    FargateService:
+        Type: AWS::ECS::Service
+        Properties: 
+            Cluster: !ImportValue FARFGATECLUSTERID
+            DeploymentConfiguration:
+                MaximumPercent: 200 
+                MinimumHealthyPercent: 50
+            DesiredCount: !Ref DesiredCount
+            HealthCheckGracePeriodSeconds: 60
+            LaunchType: FARGATE
+            LoadBalancers:
+                - 
+                  ContainerName: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - !Ref Environment
+                  ContainerPort: 4001
+                  TargetGroupArn: !Ref FargateTargerGroup
+            NetworkConfiguration: 
+                AwsvpcConfiguration:
+                    AssignPublicIp: DISABLED
+                    SecurityGroups: 
+                        - !Ref FargateContainerSecurityGroup
+                    Subnets: 
+                        - !ImportValue SubnetInternalAID 
+                        - !ImportValue SubnetInternalCID 
+            ServiceName: !Join
+                - '-'
+                - - !Ref TagName
+                  - 'service'
+                  - !Ref Environment
+            TaskDefinition: !Ref FargateTask
+    FargateTask:
+        Type: AWS::ECS::TaskDefinition
+        Properties:
+            Cpu: 1024 #パラメータにする
+            Memory: 2GB #パラメータにする
+            NetworkMode: awsvpc
+            Family: !Join
+                - '-'
+                - - !Ref TagName
+                  - 'fargate'
+                  - 'task'
+                  - !Ref Environment
+            RequiresCompatibilities: 
+                - FARGATE
+            ContainerDefinitions:
+                - Name: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - !Ref Environment
+                  Image: !Ref ImageName
+                  Memory: 2048
+                  PortMappings: 
+                      - ContainerPort: 4001 # パラメータ化する
+                  LogConfiguration:
+                      LogDriver: awslogs
+                      Options:
+                          awslogs-group: !Ref 'CloudwatchLogsGroup'
+                          awslogs-region: !Ref 'AWS::Region'
+                          awslogs-stream-prefix: !Join
+                              - '-'
+                              - - 'fargate'
+                                - !Ref TagName
+                                - 'log'
+                  Command: # パラメータ化する
+                      - bash
+                      - docker/entrypoint.sh
+            ExecutionRoleArn: !GetAtt FargateExcutionRole.Arn
+    CloudwatchLogsGroup:
+        Type: AWS::Logs::LogGroup
+        Properties:
+            LogGroupName: !Join ['-', [ECSLogGroup, !Ref 'AWS::StackName']]
+            RetentionInDays: 14

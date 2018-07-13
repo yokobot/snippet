@@ -1,0 +1,112 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Provisioning bastion ec2 instance.'
+
+Outputs:
+    BASTIONID:
+        Description: 'bastion instance ID'
+        Value:
+            !Ref BastionInstance
+        Export:
+            Name: 'BASTIONID'
+
+Parameters:
+    KeyName:
+        Type: 'AWS::EC2::KeyPair::KeyName'
+        Description: 'Name of an existing EC2 KeyPair to enable SSH access to bastion instances.'
+    InstanceType:
+        Description: 'EC2 instance type'
+        Type: 'String'
+        Default: 't2.micro'
+        AllowedValues: ['t2.micro', 't2.small', 't2.medium', 't2.large', 'm3.medium', 'm3.large',
+            'm3.xlarge', 'm3.2xlarge', 'm4.large', 'm4.xlarge', 'm4.2xlarge', 'm4.4xlarge',
+            'm4.10xlarge', 'c4.large', 'c4.xlarge', 'c4.2xlarge', 'c4.4xlarge', 'c4.8xlarge',
+            'c3.large', 'c3.xlarge', 'c3.2xlarge', 'c3.4xlarge', 'c3.8xlarge', 'r3.large',
+            'r3.xlarge', 'r3.2xlarge', 'r3.4xlarge', 'r3.8xlarge', 'i2.xlarge', 'i2.2xlarge',
+            'i2.4xlarge', 'i2.8xlarge']
+        ConstraintDescription: 'Please choose a valid instance type.'
+    TagName:
+        Description: 'For Name Tag'
+        Type: 'String'
+    Environment:
+        AllowedValues:
+            - dev
+            - stg
+            - prd
+        Default: 'dev'
+        Description: 'Environment (e.g. dev, stg, prd)'
+        Type: 'String'
+    SourceIp:
+        Default: 'xxx.xxx.xxx.xxx/32'
+        Description: 'source ip.'
+        Type: 'String'
+    InternalIp:
+        Default: '10.0.0.0/16'
+        Description: 'Intarnal ip.'
+        Type: 'String'
+
+Mappings:
+    AWSRegionToAMI:
+        us-east-1:
+            AMIID: 'ami-b70554c8'
+        ap-northeast-1:
+            AMIID: 'ami-e99f4896'
+
+Resources:
+    BastionGlobalIp:
+        Type: AWS::EC2::EIP
+        Properties:
+            InstanceId: !Ref BastionInstance
+    BastionSecurityGroup:
+        Type: 'AWS::EC2::SecurityGroup'
+        Properties:
+            GroupDescription: 'Bastion Security Group'
+            VpcId: !ImportValue VPCID
+    BastionSecurityGroupSSHinbound:
+        Type: 'AWS::EC2::SecurityGroupIngress'
+        Properties:
+            GroupId: !Ref BastionSecurityGroup
+            IpProtocol: 'tcp'
+            FromPort: '22'
+            ToPort: '22'
+            CidrIp: !Ref SourceIp
+    BastionSecurityGroupInternalinbound:
+        Type: 'AWS::EC2::SecurityGroupIngress'
+        Properties:
+            GroupId: !Ref BastionSecurityGroup
+            IpProtocol: 'tcp'
+            FromPort: '0'
+            ToPort: '65535'
+            CidrIp: !Ref InternalIp
+    BastionInstance:
+        Type: AWS::EC2::Instance
+        Properties:
+            SubnetId: !ImportValue SubnetPublicAID
+            ImageId: !FindInMap [ AWSRegionToAMI, !Ref "AWS::Region", AMIID ] 
+            KeyName: !Ref KeyName
+            InstanceType: !Ref InstanceType
+            SecurityGroupIds:
+                - !Ref BastionSecurityGroup
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - 'bastion'
+                        - !Ref Environment
+    BastionEC2Role:
+        Type: 'AWS::IAM::Role'
+        Properties:
+            AssumeRolePolicyDocument:
+                Statement:
+                    - Effect: 'Allow'
+                      Principal:
+                          Service: [ec2.amazonaws.com]
+                      Action: ['sts:AssumeRole']
+            Path: /
+            Policies:
+                - PolicyName: 'bastion'
+                  PolicyDocument:
+                      Statement:
+                          - Effect: 'Allow'
+                            Action: [ 's3:*' ]
+                            Resource: '*'
