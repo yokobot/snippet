@@ -150,6 +150,8 @@ Resources:
                   Memory: 2048
                   PortMappings: 
                       - ContainerPort: 4001 # パラメータ化する
+                  LogConfiguration:
+                      LogDriver: awslogs
                   Command: # パラメータ化する
                       - bash
                       - docker/entrypoint.sh
