@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Provisioning ECS For worker instance'
+Description: 'Provisioning ECS cluster For fargate instance'
 
 Outputs:
     FARFGATECLUSTERID:
