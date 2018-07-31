@@ -57,6 +57,9 @@ Parameters:
         Description: 'DB Storage size'
         Type: 'String'
 
+Conditions:
+    CreateProdResources: !Equals [ !Ref Environment, prd ]
+
 Resources:
     FrontDBSecurityGroup:
         Type: AWS::EC2::SecurityGroup
@@ -107,7 +110,18 @@ Resources:
             MasterUsername: !Ref DBUser
             MasterUserPassword: !Ref DBPassword
             PubliclyAccessible: false
-            MultiAZ: false
+            MultiAZ:
+                !If
+                    - CreateProdResources
+                    - true
+                    - false
+            AvailabilityZone:
+                !If
+                    - CreateProdResources
+                    - !Ref AWS::NoValue
+                    - Fn::Select:
+                        - 0
+                        - Fn::GetAZs: "" 
             DBSubnetGroupName: !Ref DBSubnetGroups
             VPCSecurityGroups:
                 - !GetAtt FrontDBSecurityGroup.GroupId
