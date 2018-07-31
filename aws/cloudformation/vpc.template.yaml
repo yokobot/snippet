@@ -7,37 +7,51 @@ Outputs:
         Value:
             !Ref VPC
         Export:
-            Name: 'VPCID'
+            Name: !Join
+                - ''
+                - - !Ref TagName
+                  - !Ref Environment
+                  - 'VPCID'
     SubnetPublicAID:
         Description: 'SubnetPublicA ID'
         Value:
             !Ref SubnetPublicA
         Export:
-            Name: 'SubnetPublicAID'
+            Name: !Join
+                - ''
+                - - !Ref TagName
+                  - !Ref Environment
+                  - 'SubnetPublicAID'
     SubnetPublicCID:
         Description: 'SubnetPublicC ID'
         Value:
             !Ref SubnetPublicC
         Export:
-            Name: 'SubnetPublicCID'
+            Name: !Join
+                - ''
+                - - !Ref TagName
+                  - !Ref Environment
+                  - 'SubnetPublicCID'
     SubnetInternalAID:
         Description: 'SubnetInternalA ID'
         Value:
             !Ref SubnetInternalA
-        Export:
-            Name: 'SubnetInternalAID'
+        Export:  
+            Name: !Join
+                - ''
+                - - !Ref TagName
+                  - !Ref Environment
+                  - 'SubnetInternalAID'
     SubnetInternalCID:
         Description: 'SubnetInternalC ID'
         Value:
             !Ref SubnetInternalC
-        Export:
-            Name: 'SubnetInternalCID'
-    RegionName:
-        Description: 'Region name'
-        Value:
-            !Ref SelectRegion
-        Export:
-            Name: 'RegionName'
+        Export: 
+            Name: !Join
+                - ''
+                - - !Ref TagName
+                  - !Ref Environment
+                  - 'SubnetInternalCID'
 
 Parameters:
     TagName:
@@ -52,6 +66,9 @@ Parameters:
         Description: 'Environment (e.g. dev, stg, prd)'
         Type: 'String'
     UseNatGateway:
+        AllowedValues:
+            - 'yes'
+            - 'no'
         Default: 'no'
         Description: 'Did you need Nat Gateway? yes / no.'
         Type: 'String'

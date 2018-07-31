@@ -7,7 +7,12 @@ Outputs:
         Value:
             !Ref FargateService
         Export:
-            Name: 'FARFGATESERVICEID'
+            Name:
+                !Join
+                    - ''
+                    - - !Ref TagName
+                      - !Ref Environment
+                      - 'FARFGATESERVICEID'
 
 Parameters:
     TagName:
@@ -35,7 +40,13 @@ Resources:
         Type: AWS::EC2::SecurityGroup
         Properties:
             GroupDescription: Access to the Fargate containers
-            VpcId: !ImportValue VPCID
+            VpcId:
+                Fn::ImportValue:
+                    !Join
+                        - ''
+                        - - !Ref TagName
+                          - !Ref Environment
+                          - 'VPCID'
             SecurityGroupIngress:
                 #Ingressルールかく
                 CidrIp: 10.0.0.0/16 
@@ -67,12 +78,24 @@ Resources:
             Port: 4001
             Protocol: HTTP
             UnhealthyThresholdCount: 3
-            VpcId: !ImportValue VPCID
+            VpcId:
+                Fn::ImportValue:
+                    !Join
+                        - ''
+                        - - !Ref TagName
+                          - !Ref Environment
+                          - 'VPCID'
             TargetType: ip
     LoadBalancerListener:
         Type: AWS::ElasticLoadBalancingV2::Listener
         Properties:
-            LoadBalancerArn: !ImportValue ALBID
+            LoadBalancerArn:
+                Fn::ImportValue:
+                    !Join
+                        - ''
+                        - - !Ref TagName
+                          - !Ref Environment
+                          - 'ALBID'
             Port: 4001
             Protocol: HTTP
             DefaultActions:
@@ -111,7 +134,13 @@ Resources:
     FargateService:
         Type: AWS::ECS::Service
         Properties: 
-            Cluster: !ImportValue FARFGATECLUSTERID
+            Cluster:
+                Fn::ImportValue:
+                    !Join
+                        - ''
+                        - - !Ref TagName
+                          - !Ref Environment
+                          - 'FARFGATECLUSTERID'
             DeploymentConfiguration:
                 MaximumPercent: 200 
                 MinimumHealthyPercent: 50
@@ -132,8 +161,18 @@ Resources:
                     SecurityGroups: 
                         - !Ref FargateContainerSecurityGroup
                     Subnets: 
-                        - !ImportValue SubnetInternalAID 
-                        - !ImportValue SubnetInternalCID 
+                        - Fn::ImportValue:
+                            !Join
+                                - ''
+                                - - !Ref TagName
+                                  - !Ref Environment
+                                  - 'SubnetInternalAID'
+                        - Fn::ImportValue:
+                            !Join
+                                - ''
+                                - - !Ref TagName
+                                  - !Ref Environment
+                                  - 'SubnetInternalCID'
             ServiceName: !Join
                 - '-'
                 - - !Ref TagName

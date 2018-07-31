@@ -7,7 +7,12 @@ Outputs:
         Value:
             !Ref FargateCluster
         Export:
-            Name: 'FARFGATECLUSTERID'
+            Name:
+                !Join
+                    - ''
+                    - - !Ref TagName
+                      - !Ref Environment
+                      - 'FARFGATECLUSTERID' 
 
 Parameters:
     TagName:

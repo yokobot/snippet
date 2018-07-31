@@ -7,13 +7,21 @@ Outputs:
         Value:
             !Ref ALB
         Export:
-            Name: 'ALBID'
+            Name: !Join
+                - ''
+                - - !Ref TagName
+                  - !Ref Environment
+                  - 'ALBID'
     ALBNAME:
         Description: 'ALB NAME'
         Value:
             !GetAtt ALB.LoadBalancerName
         Export:
-            Name: 'ALBNAME'
+            Name: !Join
+                - ''
+                - - !Ref TagName
+                  - !Ref Environment
+                  - 'ALBNAME'
 
 Parameters:
     TagName:
@@ -150,8 +158,18 @@ Resources:
             SecurityGroups:
             - !Ref SgALB
             Subnets:
-            - !ImportValue SubnetPublicAID
-            - !ImportValue SubnetPublicCID
+            - Fn::ImportValue:
+                !Join
+                    - ''
+                    - - !Ref TagName
+                      - !Ref Environment
+                      - SubnetPublicAID
+            - Fn::ImportValue: 
+                !Join
+                    - ''
+                    - - !Ref TagName
+                      - !Ref Environment
+                      - SubnetPublicCID
             Tags:
                 - Key: 'Name'
                   Value: !Join

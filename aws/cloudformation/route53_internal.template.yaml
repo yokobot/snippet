@@ -7,7 +7,11 @@ Outputs:
         Value:
             !Ref HostedZone
         Export:
-            Name: 'HOSTETDZONEID'
+            Name: !Join
+                - ''
+                - - !Ref TagName 
+                  - !Ref Environment
+                  - 'HOSTETDZONEID'
 
 Parameters:
     TagName:
@@ -34,4 +38,5 @@ Resources:
                   - 'net'
             VPCs:
                 - VPCId: !ImportValue VPCID
-                  VPCRegion: !ImportValue RegionName
+                  #VPCRegion: !ImportValue RegionName
+                  VPCRegion: !Ref AWS::Region
