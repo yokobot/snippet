@@ -7,7 +7,11 @@ Outputs:
         Value:
             !Ref BastionInstance
         Export:
-            Name: 'BASTIONID'
+            Name: !Join
+                - ''
+                - - !Ref TagName
+                  - !Ref Environment
+                  - BASTIONID
 
 Parameters:
     KeyName:
@@ -60,7 +64,13 @@ Resources:
         Type: 'AWS::EC2::SecurityGroup'
         Properties:
             GroupDescription: 'Bastion Security Group'
-            VpcId: !ImportValue VPCID
+            VpcId:
+                Fn::ImportValue:
+                    !Join
+                        - ''
+                        - - !Ref TagName
+                          - !Ref Environment
+                          - 'VPCID'
     BastionSecurityGroupSSHinbound:
         Type: 'AWS::EC2::SecurityGroupIngress'
         Properties:
@@ -80,7 +90,13 @@ Resources:
     BastionInstance:
         Type: AWS::EC2::Instance
         Properties:
-            SubnetId: !ImportValue SubnetPublicAID
+            SubnetId:
+                Fn::ImportValue:
+                    !Join
+                        - ''
+                        - - !Ref TagName
+                          - !Ref Environment
+                          - 'SubnetPublicAID'
             ImageId: !FindInMap [ AWSRegionToAMI, !Ref "AWS::Region", AMIID ] 
             KeyName: !Ref KeyName
             InstanceType: !Ref InstanceType

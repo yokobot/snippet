@@ -7,7 +7,12 @@ Outputs:
         Value:
             !GetAtt DBinstance.Endpoint.Address
         Export:
-            Name: 'DBENDPOINT'
+            Name:
+                !Join
+                    - ''
+                    - - !Ref TagName
+                      - !Ref Environment
+                      - 'DBENDPOINT'
 
 Parameters:
     TagName:
@@ -57,7 +62,13 @@ Resources:
         Type: AWS::EC2::SecurityGroup
         Properties:
             GroupDescription: 'DB Security Group'
-            VpcId: !ImportValue VPCID
+            VpcId:
+                Fn::ImportValue:
+                    !Join
+                        - ''
+                        - - !Ref TagName
+                          - !Ref Environment
+                          - 'VPCID'
     DBSecurityGroupInternalinbound:
         Type: AWS::EC2::SecurityGroupIngress
         Properties:
@@ -72,8 +83,18 @@ Resources:
             DBSubnetGroupDescription: !Ref TagName
             DBSubnetGroupName: !Ref TagName
             SubnetIds:
-                - !ImportValue SubnetInternalAID
-                - !ImportValue SubnetInternalCID
+                - Fn::ImportValue:
+                    !Join
+                        - ''
+                        - - !Ref TagName
+                          - !Ref Environment
+                          - 'SubnetInternalAID'
+                - Fn::ImportValue:
+                    !Join
+                        - ''
+                        - - !Ref TagName
+                          - !Ref Environment
+                          - 'SubnetInternalCID'
     DBinstance:
         Type: AWS::RDS::DBInstance
         Properties:
@@ -93,7 +114,13 @@ Resources:
     RdsDnsRecord:
         Type: AWS::Route53::RecordSet
         Properties:
-            HostedZoneId: !ImportValue HOSTETDZONEID
+            HostedZoneId:
+                Fn::ImportValue:
+                    !Join
+                        - ''
+                        - - !Ref TagName
+                          - !Ref Environment
+                          - 'HOSTETDZONEID' 
             Name: !Join
                 - '.'
                 - - 'db'
