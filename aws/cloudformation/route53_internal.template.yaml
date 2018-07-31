@@ -37,6 +37,12 @@ Resources:
                 - - !Ref TagName
                   - 'net'
             VPCs:
-                - VPCId: !ImportValue VPCID
-                  #VPCRegion: !ImportValue RegionName
+                #- VPCId: !ImportValue VPCID
+                - VPCId:
+                      Fn::ImportValue:
+                          !Join
+                              - ''
+                              - - !Ref TagName
+                                - !Ref Environment
+                                - 'VPCID'
                   VPCRegion: !Ref AWS::Region
