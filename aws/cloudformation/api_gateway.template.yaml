@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Provisioning api-gateway'
+
+Outputs:
+    APIGATEWAYID:
+        Description: 'API-gateway ID'
+        Value:
+            !Ref ApiGateway
+        Export:
+            Name:
+                !Join
+                    - ''
+                    - - !Ref TagName
+                      - !Ref Environment
+                      - 'APIGATEWAYID'
+
+Parameters:
+    TagName:
+        Description: 'For Name Tag'
+        Type: 'String'
+    Environment:
+        AllowedValues:
+            - dev
+            - stg
+            - prd
+        Default: 'dev'
+        Description: 'Environment (e.g. dev, stg, prd)'
+        Type: 'String'
+    ApiName:
+        Description: 'API Name'
+        Type: 'String'
+    ApiPath:
+        Description: 'API Path'
+        Type: 'String'
+    StreamName:
+        Description: 'kinesis firehose stream name'
+        Type: 'String'
+
+Resources:
+    ApiGateway:
+        Type: AWS::ApiGateway::RestApi
+        Properties:
+            Name: !Ref ApiName
+    ApiResource:
+        Type: AWS::ApiGateway::Resource
+        Properties:
+            ParentId: !GetAtt ApiGateway.RootResourceId
+            PathPart: !Ref ApiPath
+            RestApiId: !Ref ApiGateway
+    ApiGatewayRole:
+        Type: 'AWS::IAM::Role'
+        Properties:
+            AssumeRolePolicyDocument:
+                Statement:
+                    - Effect: 'Allow'
+                      Principal:
+                          Service: [apigateway.amazonaws.com]
+                      Action: ['sts:AssumeRole']
+            Path: /
+            Policies:
+                - PolicyName: !Join
+                      - ''
+                      - - !Ref TagName
+                        - 'apigateway'
+                        - 'Role'
+                  PolicyDocument:
+                      Statement:
+                          - Effect: 'Allow'
+                            Action: [ 's3:*', 'logs:*', 'kinesis:*', 'firehose:*']
+                            Resource: '*'
+    ApiGatewayBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+            BucketName: !Join
+                - '-'
+                - - !Ref TagName
+                  - 'apigateway'
+                  - 'bucket'
+                  - !Ref Environment
+    ApiGatewayMethod:
+        Type: AWS::ApiGateway::Method
+        Properties:
+            RestApiId: !Ref ApiGateway
+            ResourceId: !Ref ApiResource
+            HttpMethod: 'POST'
+            AuthorizationType: 'NONE'
+            MethodResponses:
+                - StatusCode: 200
+            Integration:
+                Type: AWS
+                Uri: arn:aws:apigateway:ap-northeast-1:firehose:action/PutRecordBatch
+                IntegrationHttpMethod: 'POST'
+                Credentials: !GetAtt ApiGatewayRole.Arn
+                PassthroughBehavior: 'WHEN_NO_TEMPLATES'
+                IntegrationResponses:
+                    - StatusCode: 200
+                      ResponseTemplates:
+                          application/json: '{"status":"OK"}'
+                RequestTemplates:
+                     application/json: !Join
+                         - ""
+                         - - "#set($inputRoot = $input.path('$'))\n"
+                           - "{\n"
+                           - '"DeliveryStreamName": "'
+                           - !Ref StreamName
+                           - '"'
+                           - ",\n"
+                           - '"Records": ['
+                           - "\n"
+                           - "#foreach($elem in $inputRoot.Records)\n"
+                           - "{\n"
+                           - '"Data": "$util.base64Encode($elem.Data)"'
+                           - "\n"
+                           - "}#if($foreach.hasNext),#end\n"
+                           - "#end\n"
+                           - "]\n"
+                           - "}\n"
+

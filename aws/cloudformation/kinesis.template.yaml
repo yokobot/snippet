@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Provisioning kinesis stream & firehose'
+
+Outputs:
+    KINESISSTREAMID:
+        Description: 'Kinesis stream ID'
+        Value:
+            !Ref KinesisStream
+        Export:
+            Name:
+                !Join
+                    - ''
+                    - - !Ref TagName
+                      - !Ref Environment
+                      - 'KINESISSTREAMID'
+    KINESISFIREHOSEID:
+        Description: 'Kinesis firehose ID'
+        Value:
+            !Ref KinesisFirehose
+        Export:
+            Name:
+                !Join
+                    - ''
+                    - - !Ref TagName
+                      - !Ref Environment
+                      - 'KINESISFIREHOSEID'
+
+Parameters:
+    TagName:
+        Description: 'For Name Tag'
+        Type: 'String'
+    Environment:
+        AllowedValues:
+            - dev
+            - stg
+            - prd
+        Default: 'dev'
+        Description: 'Environment (e.g. dev, stg, prd)'
+        Type: 'String'
+    HECEndpoint:
+        Description: 'End point URL.'
+        Type: 'String'
+    HECToken:
+        Description: 'End point Token.'
+        Type: 'String'
+
+Resources:
+    KinesisRole:
+        Type: 'AWS::IAM::Role'
+        Properties:
+            AssumeRolePolicyDocument:
+                Statement:
+                    - Effect: 'Allow'
+                      Principal:
+                          Service: [firehose.amazonaws.com]
+                      Action: ['sts:AssumeRole']
+            Path: /
+            Policies:
+                - PolicyName: !Join
+                      - ''
+                      - - !Ref TagName
+                        - 'kinesis'
+                        - 'Role'
+                  PolicyDocument:
+                      Statement:
+                          - Effect: 'Allow'
+                            Action: [ 's3:*', 'logs:PutLogEvents', 'lambda:*', 'kinesis:*', 'kms:Decrypt' ]
+                            Resource: '*'
+    KinesisBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+            BucketName: !Join
+                - '-'
+                - - !Ref TagName
+                  - 'kinesis'
+                  - 'bucket'
+                  - !Ref Environment
+    KinesisStream:
+        Type: AWS::Kinesis::Stream
+        Properties:
+            Name: !Ref TagName
+            RetentionPeriodHours: 24
+            ShardCount: 10
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - 'kinesis'
+                        - !Ref Environment
+    KinesisFirehose:
+        DependsOn: KinesisStream
+        Type: AWS::KinesisFirehose::DeliveryStream
+        Properties:
+            DeliveryStreamName: !Ref TagName
+            DeliveryStreamType: 'KinesisStreamAsSource'
+            KinesisStreamSourceConfiguration:
+                KinesisStreamARN: !GetAtt KinesisStream.Arn
+                RoleARN: !GetAtt KinesisRole.Arn
+            SplunkDestinationConfiguration:
+                HECEndpoint: !Ref HECEndpoint
+                HECEndpointType: 'Raw'
+                HECToken: !Ref HECToken
+                S3Configuration:
+                    BucketARN: !GetAtt KinesisBucket.Arn
+                    BufferingHints:
+                        IntervalInSeconds: 60
+                        SizeInMBs: 5
+                    CompressionFormat: 'GZIP'
+                    RoleARN: !GetAtt KinesisRole.Arn
+
