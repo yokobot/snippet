@@ -1,0 +1,277 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Provisioning elastic search & kibana proxy instance.'
+
+Outputs:
+    KIBANAID:
+        Description: 'kibana instance ID'
+        Value:
+            !Ref KibanaInstance
+        Export:
+            Name: !Join
+                - ''
+                - - !Ref TagName
+                  - !Ref Environment
+                  - KIBANAID
+    ESDOMAINURL:
+        Description: 'elastic search domain url'
+        Value:
+            !GetAtt ESDomain.DomainEndpoint
+        Export:
+            Name: !Join
+                - ''
+                - - !Ref TagName
+                  - !Ref Environment
+                  - ESDOMAINURL
+
+Parameters:
+    KeyName:
+        Type: 'AWS::EC2::KeyPair::KeyName'
+        Description: 'Name of an existing EC2 KeyPair to enable SSH access to kibana instances.'
+    InstanceType:
+        Description: 'EC2 instance type'
+        Type: 'String'
+        Default: 't2.micro'
+        AllowedValues: ['t2.micro', 't2.small', 't2.medium', 't2.large', 'm3.medium', 'm3.large',
+            'm3.xlarge', 'm3.2xlarge', 'm4.large', 'm4.xlarge', 'm4.2xlarge', 'm4.4xlarge',
+            'm4.10xlarge', 'c4.large', 'c4.xlarge', 'c4.2xlarge', 'c4.4xlarge', 'c4.8xlarge',
+            'c3.large', 'c3.xlarge', 'c3.2xlarge', 'c3.4xlarge', 'c3.8xlarge', 'r3.large',
+            'r3.xlarge', 'r3.2xlarge', 'r3.4xlarge', 'r3.8xlarge', 'i2.xlarge', 'i2.2xlarge',
+            'i2.4xlarge', 'i2.8xlarge']
+        ConstraintDescription: 'Please choose a valid instance type.'
+    TagName:
+        Description: 'For Name Tag'
+        Type: 'String'
+    Environment:
+        AllowedValues:
+            - dev
+            - stg
+            - prd
+        Default: 'dev'
+        Description: 'Environment (e.g. dev, stg, prd)'
+        Type: 'String'
+    SourceIp:
+        Default: 'xxx.xxx.xxx.xxx/32'
+        Description: 'source ip.'
+        Type: 'String'
+    InternalIp:
+        Default: '10.0.0.0/16'
+        Description: 'Intarnal ip.'
+        Type: 'String'
+
+Mappings:
+    AWSRegionToAMI:
+        us-east-1:
+            AMIID: 'ami-b70554c8'
+        ap-northeast-1:
+            AMIID: 'ami-e99f4896'
+
+Resources:
+    ESDomain:
+        Type: AWS::Elasticsearch::Domain
+        Properties:
+            DomainName: !Join
+                - '-'
+                - - !Ref TagName
+                  - 'elasticsearch'
+                  - !Ref Environment
+            ElasticsearchVersion: '6.3'
+            AccessPolicies:
+                Version: "2012-10-17"
+                Statement:
+                    -
+                      Effect: 'Allow'
+                      Principal:
+                          AWS: '*'
+                      Action:  'es:*'
+                      Resource: '*'
+            EBSOptions:
+                EBSEnabled: true
+                Iops: 0
+                VolumeSize: 20
+                VolumeType: 'gp2'
+            VPCOptions:
+                SubnetIds:
+                    - Fn::ImportValue:
+                        !Join
+                            - ''
+                            - - !Ref TagName
+                              - !Ref Environment
+                              - 'SubnetInternalAID'
+                SecurityGroupIds:
+                    - !Ref KibanaSecurityGroup
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - 'elasticsearch'
+                        - !Ref Environment
+    KibanaGlobalIp:
+        Type: AWS::EC2::EIP
+        Properties:
+            InstanceId: !Ref KibanaInstance
+    KibanaSecurityGroup:
+        Type: 'AWS::EC2::SecurityGroup'
+        Properties:
+            GroupDescription: 'Kibana Security Group'
+            VpcId:
+                Fn::ImportValue:
+                    !Join
+                        - ''
+                        - - !Ref TagName
+                          - !Ref Environment
+                          - 'VPCID'
+    KibanaSecurityGroupSSHinbound:
+        Type: 'AWS::EC2::SecurityGroupIngress'
+        Properties:
+            GroupId: !Ref KibanaSecurityGroup
+            IpProtocol: 'tcp'
+            FromPort: '22'
+            ToPort: '22'
+            CidrIp: !Ref SourceIp
+    KibanaSecurityGroupHttpinbound:
+        Type: 'AWS::EC2::SecurityGroupIngress'
+        Properties:
+            GroupId: !Ref KibanaSecurityGroup
+            IpProtocol: 'tcp'
+            FromPort: '80'
+            ToPort: '80'
+            CidrIp: !Ref SourceIp
+    KibanaSecurityGroupInternalinbound:
+        Type: 'AWS::EC2::SecurityGroupIngress'
+        Properties:
+            GroupId: !Ref KibanaSecurityGroup
+            IpProtocol: 'tcp'
+            FromPort: '0'
+            ToPort: '65535'
+            CidrIp: !Ref InternalIp
+    KibanaInstance:
+        Type: AWS::EC2::Instance
+        DependsOn: ESDomain
+        Properties:
+            SubnetId:
+                Fn::ImportValue:
+                    !Join
+                        - ''
+                        - - !Ref TagName
+                          - !Ref Environment
+                          - 'SubnetPublicAID'
+            ImageId: !FindInMap [ AWSRegionToAMI, !Ref "AWS::Region", AMIID ]
+            KeyName: !Ref KeyName
+            InstanceType: !Ref InstanceType
+            SecurityGroupIds:
+                - !Ref KibanaSecurityGroup
+            UserData:
+                Fn::Base64: !Sub |
+                    #!/bin/bash -xe
+                    amazon-linux-extras install -y nginx1.12
+                    ENDPOINTURL="proxy_pass https://${ESDomain.DomainEndpoint}/;"
+                    sed -i -e "47a $ENDPOINTURL" /etc/nginx/nginx.conf
+                    service nginx start
+                    chkconfig nginx on
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - 'kibana'
+                        - !Ref Environment
+    KibanaEC2Role:
+        Type: 'AWS::IAM::Role'
+        Properties:
+            AssumeRolePolicyDocument:
+                Statement:
+                    - Effect: 'Allow'
+                      Principal:
+                          Service: [ec2.amazonaws.com]
+                      Action: ['sts:AssumeRole']
+            Path: /
+            Policies:
+                - PolicyName: 'kibana'
+                  PolicyDocument:
+                      Statement:
+                          - Effect: 'Allow'
+                            Action: [ 's3:*' ]
+                            Resource: '*'
+    LambdaExecutionRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Statement:
+                    - Effect: 'Allow'
+                      Principal:
+                          Service: [lambda.amazonaws.com]
+                      Action: ['sts:AssumeRole']
+            Path: /
+            Policies:
+                - PolicyName: !Ref TagName
+                  PolicyDocument:
+                      Statement:
+                          - Effect: 'Allow'
+                            Action: ['es:*',
+                                     'logs:CreateLogGroup',
+                                     'logs:CreateLogStream',
+                                     'logs:PutLogEvents',
+                                     'ec2:CreateNetworkInterface',
+                                     'ec2:DescribeNetworkInterfaces',
+                                     'ec2:DeleteNetworkInterface']
+                            Resource: '*'
+    ESLambdaFunction:
+        Type: AWS::Lambda::Function
+        Properties:
+            Handler: index.handler
+            Role: !GetAtt LambdaExecutionRole.Arn
+            Code:
+                S3Bucket: 'elasticsearch-lambda-function-code'
+                S3Key: 'log_to_es.zip'
+            Runtime: nodejs8.10
+            MemorySize: 128
+            Timeout: 60
+            Environment:
+                Variables:
+                    VPCENDPOINT: !GetAtt ESDomain.DomainEndpoint
+            VpcConfig:
+                SecurityGroupIds:
+                    - !Ref KibanaSecurityGroup
+                SubnetIds:
+                    - Fn::ImportValue:
+                        !Join
+                            - ''
+                            - - !Ref TagName
+                              - !Ref Environment
+                              - SubnetInternalAID
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - 'es'
+                        - 'lambda'
+                        - !Ref Environment
+    LogSubscriptionFilter:
+        Type: AWS::Logs::SubscriptionFilter
+        DependsOn: ESLambdaFunctionInvokePermission
+        Properties:
+            DestinationArn: !GetAtt ESLambdaFunction.Arn
+            FilterPattern: ''
+            LogGroupName:
+                Fn::ImportValue:
+                    !Join
+                        - ''
+                        - - !Ref TagName
+                          - !Ref Environment
+                          - FARGATELOGGROUPNAME
+    ESLambdaFunctionInvokePermission:
+        Type: AWS::Lambda::Permission
+        Properties:
+            FunctionName: !GetAtt ESLambdaFunction.Arn
+            Action: 'lambda:InvokeFunction'
+            Principal: 'logs.amazonaws.com'
+            SourceArn:
+                Fn::ImportValue:
+                    !Join
+                        - ''
+                        - - !Ref TagName
+                          - !Ref Environment
+                          - FARGATELOGGROUPARN
+
