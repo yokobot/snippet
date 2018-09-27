@@ -138,6 +138,7 @@ Parameters:
         Type: 'String'
 
 Conditions:
+    CreateProdResources: !Equals [ !Ref Environment, prd ]
     IsAuroraMySQL: !Equals [ !Ref DatabaseEngine, aurora ]
     AlarmsEnabled: !And
         - !Condition IsAuroraMySQL
@@ -228,6 +229,27 @@ Resources:
     AuroraInstance:
         Type: AWS::RDS::DBInstance
         DependsOn: AuroraCluster
+        Properties:
+            Engine: !Ref DatabaseEngine
+            DBClusterIdentifier: !Ref AuroraCluster
+            DBInstanceClass: !Ref DatabaseInstanceClass
+            DBSubnetGroupName: !Ref AuroraSubnetGroup
+            StorageEncrypted: !Ref EncryptionAtRest
+            DBParameterGroupName: !If [ IsAuroraMySQL,  default.aurora5.6, default.aurora-postgresql9.6 ]
+            MonitoringInterval: !If [ EnhancedMonitoringSupprtedAndEnabled, 60, 0 ]
+            MonitoringRoleArn: !If [ EnhancedMonitoringSupprtedAndEnabled, !GetAtt EnhancedMonitoringRole.Arn, !Ref "AWS::NoValue" ]
+            CopyTagsToSnapshot: true
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                     - '-'
+                     - - !Ref TagName
+                       - 'aurora-instance'
+                       - !Ref Environment
+    AuroraInstance1:
+        Type: AWS::RDS::DBInstance
+        DependsOn: AuroraCluster
+        Condition: CreateProdResources
         Properties:
             Engine: !Ref DatabaseEngine
             DBClusterIdentifier: !Ref AuroraCluster
