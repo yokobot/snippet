@@ -267,3 +267,23 @@ Resources:
                      - - !Ref TagName
                        - 'aurora-instance'
                        - !Ref Environment
+    AuroraDnsRecord:
+        Type: AWS::Route53::RecordSet
+        Properties:
+            HostedZoneId:
+                Fn::ImportValue:
+                    !Join
+                        - ''
+                        - - !Ref TagName
+                          - !Ref Environment
+                          - 'HOSTETDZONEID'
+            Name: !Join
+                - '.'
+                - - 'db'
+                  - !Ref Environment
+                  - !Ref TagName
+                  - 'net'
+            Type: CNAME
+            TTL: '900'
+            ResourceRecords:
+                - !GetAtt AuroraCluster.Endpoint.Address

@@ -61,7 +61,7 @@ aws/cloudformation/rds.template.yaml
 -> postgreSQL RDS インスタンス, Internal DNS record を構築する CFn  
   
 aws/cloudformation/route53_internal.template.yaml  
--> Internal 向け干すテッドゾーンを構築する CFn  
+-> Internal 向けホステッドゾーンを構築する CFn  
   
 aws/cloudformation/vpc.template.yaml  
 -> VPC, route-table, internet-gateway, nat-gateway, subnet を構築する CFn  
