@@ -6,7 +6,7 @@ cache:
   directories:
   - node_modules  
 install:
-  - pip install ansible pylint boto3
+  - pip install ansible pylint boto3 ruamel.yaml
 before_script:
   - pushd ../
   - git clone https://github.com/willthames/ansible-lint.git
