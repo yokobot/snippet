@@ -1,0 +1,405 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Provisoning Aurora Serverless template.'
+
+Parameters:
+    KeyName:
+        Type: 'AWS::EC2::KeyPair::KeyName'
+        Description: 'Name of an existing EC2 KeyPair to enable SSH access to bastion instances.'
+    InstanceType:
+        Description: 'EC2 instance type'
+        Type: 'String'
+        Default: 't2.micro'
+        AllowedValues: ['t2.micro', 't2.small', 't2.medium', 't2.large', 'm3.medium', 'm3.large',
+            'm3.xlarge', 'm3.2xlarge', 'm4.large', 'm4.xlarge', 'm4.2xlarge', 'm4.4xlarge',
+            'm4.10xlarge', 'c4.large', 'c4.xlarge', 'c4.2xlarge', 'c4.4xlarge', 'c4.8xlarge',
+            'c3.large', 'c3.xlarge', 'c3.2xlarge', 'c3.4xlarge', 'c3.8xlarge', 'r3.large',
+            'r3.xlarge', 'r3.2xlarge', 'r3.4xlarge', 'r3.8xlarge', 'i2.xlarge', 'i2.2xlarge',
+            'i2.4xlarge', 'i2.8xlarge']
+        ConstraintDescription: 'Please choose a valid instance type.'
+    TagName:
+        Description: 'For Name Tag. ex "myapp"'
+        Type: 'String'
+    Environment:
+        AllowedValues:
+            - dev
+            - stg
+            - prd
+            - sharedb
+        Default: 'sharedb'
+        Description: 'Environment (e.g. dev, stg, prd)'
+        Type: 'String'
+    CidrBlock:
+        Description: 'What is the second octet in cidr block.'
+        Default: '0'
+        Type: 'String'
+    SelectRegion:
+        Description: 'select Rrgion.'
+        Default: 'ap-northeast-1'
+        Type: 'String' 
+        AllowedValues:
+            - ap-northeast-1
+            - us-east-1
+    AllowSourceIp:
+        Description: 'Allow Source Ip adress(CIDR).'
+        Default: 'xxx.xxx.xxx.xxx/xx'
+        Type: 'String' 
+    DataBaseName:
+        Type: 'String'
+        Description: 'DB schema name.'
+    DbMasterUser:
+        Description: 'DB Master User name.'
+        Default: 'root'
+        Type: 'String' 
+    DbMasterPassword:
+        NoEcho: true
+        Type: 'String'
+        Description: 'DB Master Password for root user.'
+    DeletionProtection:
+        Type: 'String'
+        Description: 'Deleteion protection flag.'
+        Default: 'true'
+        AllowedValues:
+            - 'true'
+            - 'false'
+    MaxCapacity:
+        Type: 'String'
+        Description: 'Aurora cluster scaleup max number.'
+        Default: '2'
+        AllowedValues:
+            - '2'
+            - '4'
+            - '8'
+            - '16'
+            - '32'
+            - '64'
+            - '128'
+            - '256'
+    SecondsUntilAutoPause:
+        Type: 'String'
+        Description: 'Second until auto pause.'
+        Default: '300'
+    DNSName:
+        Type: 'String'
+        Description: 'DB Endpoint URL.'
+        Default: 'xxxxxxxxxxxxx.jp'
+    HostedZoneId:
+        Type: 'String'
+        Description: 'Route53 DNS Hosted zone ID.'
+        Default: 'xxxxxxxxxx'
+
+Mappings:
+    AWSRegionToAMI:
+        us-east-1:
+            AMIID: 'ami-035be7bafff33b6b6'
+        ap-northeast-1:
+            AMIID: 'ami-0d7ed3ddb85b521a6'
+
+Resources:
+    VPC:
+        Type: 'AWS::EC2::VPC'
+        Properties: 
+            EnableDnsSupport: true
+            EnableDnsHostnames: true
+            CidrBlock: !Join
+                - ''
+                - - '10.'
+                  - !Ref CidrBlock
+                  - '.0.0/16'
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - !Ref Environment
+                        - 'vpc'
+    SubnetPublicA:
+        Type: 'AWS::EC2::Subnet'
+        Properties:
+            CidrBlock: !Join
+                - ''
+                - - '10.'
+                  - !Ref CidrBlock
+                  - '.1.0/24'
+            AvailabilityZone: !Join
+                - ''
+                - - !Ref SelectRegion
+                  - 'a'
+            VpcId:
+                !Ref VPC
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - !Ref Environment
+                        - 'subnet-public-A'
+    SubnetPublicC:
+        Type: 'AWS::EC2::Subnet'
+        Properties:
+            CidrBlock: !Join
+                - ''
+                - - '10.'
+                  - !Ref CidrBlock
+                  - '.2.0/24'
+            AvailabilityZone: !Join
+                - ''
+                - - !Ref SelectRegion
+                  - 'c'
+            VpcId:
+                !Ref VPC
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - !Ref Environment
+                        - 'subnet-public-C'
+    InternetGateway:
+        Type: 'AWS::EC2::InternetGateway'
+        Properties:
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - !Ref Environment
+                        - 'igw'
+    VPCGatewayAttachment:
+        Type: 'AWS::EC2::VPCGatewayAttachment'
+        Properties:
+            VpcId:
+                !Ref VPC
+            InternetGatewayId:
+                !Ref InternetGateway
+    RouteTablePublic:
+        Type: 'AWS::EC2::RouteTable'
+        Properties:
+            VpcId:
+                !Ref VPC
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - !Ref Environment
+                        - 'rt'
+                        - 'public'
+    RoutePublic:
+        Type: 'AWS::EC2::Route'
+        Properties:
+            RouteTableId:
+                !Ref RouteTablePublic
+            DestinationCidrBlock: 0.0.0.0/0
+            GatewayId:
+                !Ref InternetGateway
+    SubnetPublicRouteA:
+        Type: 'AWS::EC2::SubnetRouteTableAssociation'
+        Properties: 
+            RouteTableId:
+                !Ref RouteTablePublic
+            SubnetId:
+                !Ref SubnetPublicA
+    SubnetPublicRouteC:
+        Type: 'AWS::EC2::SubnetRouteTableAssociation'
+        Properties: 
+            RouteTableId:
+                !Ref RouteTablePublic
+            SubnetId:
+                !Ref SubnetPublicC
+    AuroraSubnetGroup:
+        Type: AWS::RDS::DBSubnetGroup
+        Properties:
+            DBSubnetGroupDescription: Aurora subnet group
+            SubnetIds: 
+                - !Ref SubnetPublicA
+                - !Ref SubnetPublicC
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - !Ref Environment
+                        - 'aurora'
+                        - 'subnet'
+    AuroraSecurtyGroup:
+        Type: 'AWS::EC2::SecurityGroup'
+        Properties:
+            GroupDescription: 'Security Group For Aurora'
+            VpcId: !Ref VPC
+            SecurityGroupIngress:
+            - IpProtocol: tcp
+              FromPort: 3306
+              ToPort: 3306
+              SourceSecurityGroupId: !Ref ProxySecurtyGroup 
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - !Ref Environment
+                        - 'aurora'
+                        - 'sg'
+    ProxySecurtyGroup:
+        Type: 'AWS::EC2::SecurityGroup'
+        Properties:
+            GroupDescription: 'Security Group For Proxy'
+            VpcId: !Ref VPC
+            SecurityGroupIngress:
+            - IpProtocol: tcp
+              FromPort: 13306
+              ToPort: 13306
+              CidrIp: !Ref AllowSourceIp
+            - IpProtocol: tcp
+              FromPort: 22
+              ToPort: 22
+              CidrIp: !Ref AllowSourceIp
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - !Ref Environment
+                        - 'proxy'
+                        - 'sg'
+    ProxySQLGlobalIp:
+        Type: AWS::EC2::EIP
+        Properties:
+            InstanceId: !Ref ProxySQLInstance
+    ProxySQLInstance:
+        Type: AWS::EC2::Instance
+        Properties:
+            SubnetId: !Ref SubnetPublicA
+            ImageId: !FindInMap [ AWSRegionToAMI, !Ref "AWS::Region", AMIID ] 
+            KeyName: !Ref KeyName
+            InstanceType: !Ref InstanceType
+            IamInstanceProfile: !Ref ProxySQLInstanceProfile 
+            SecurityGroupIds:
+                - !Ref ProxySecurtyGroup
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - 'proxysql'
+                        - !Ref Environment
+    ProxySQLInstanceProfile:
+        Type: 'AWS::IAM::InstanceProfile'
+        Properties:
+            Path: /
+            Roles:
+                - !Ref ProxySQLRole
+    ProxySQLRole:
+        Type: 'AWS::IAM::Role'
+        Properties:
+            AssumeRolePolicyDocument:
+                Statement:
+                    - Effect: 'Allow'
+                      Principal:
+                          Service: [ec2.amazonaws.com]
+                      Action: ['sts:AssumeRole']
+            Path: /
+            Policies:
+                - PolicyName: 'proxysql'
+                  PolicyDocument:
+                      Statement:
+                          - Effect: 'Allow'
+                            Action: [ 's3:*' ]
+                            Resource: '*'
+    AuroraClusterParameterGroup:
+        Type: AWS::RDS::DBClusterParameterGroup
+        Properties:
+            Description: !Join
+                - ''
+                - - 'For '
+                  - !Ref Environment
+                  - ' aurora cluster parameter group.'
+            Family: 'aurora5.6'
+            Parameters: {
+                "binlog_checksum": "NONE",
+                "binlog_format": "ROW",
+                "character_set_client": "utf8mb4",
+                "character_set_connection": "utf8mb4",
+                "character_set_database": "utf8mb4",
+                "character_set_filesystem": "utf8mb4",
+                "character_set_results": "utf8mb4",
+                "character_set_server": "utf8mb4",
+                "collation_connection": "utf8mb4_general_ci",
+                "collation_server": "utf8mb4_general_ci",
+                "time_zone": "Asia/Tokyo"
+            }
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - !Ref Environment
+                        - 'cluster'
+                        - 'parametergroup'
+    AuroraParameterGroup:
+        Type: AWS::RDS::DBParameterGroup
+        Properties:
+            Description: !Join
+                - ''
+                - - 'For '
+                  - !Ref Environment
+                  - ' aurora cluster parameter group.'
+            Family: 'aurora5.6'
+            Parameters: {
+                "innodb_file_format": "Barracuda",
+                "log_queries_not_using_indexes": "0",
+                "long_query_time": "0.5",
+                "max_allowed_packet": "16777216",
+                "slow_query_log": "1",
+                "tx_isolation": "READ-COMMITTED",
+                "wait_timeout": "1000"
+            }    
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - !Ref Environment
+                        - 'parametergroup'
+    AuroraServerlessCluster:
+        Type: "AWS::RDS::DBCluster"
+        Properties:
+            BackupRetentionPeriod: 7
+            DatabaseName: !Ref DataBaseName
+            DBClusterIdentifier: !Join
+                - '-'
+                - - !Ref Environment
+                  - 'aurora-severless'
+            DBClusterParameterGroupName: !Ref AuroraClusterParameterGroup
+            DBSubnetGroupName: !Ref AuroraSubnetGroup
+            DeletionProtection: !Ref DeletionProtection
+            Engine: 'aurora'
+            EngineMode: 'serverless'
+            MasterUsername: !Ref DbMasterUser
+            MasterUserPassword: !Ref DbMasterPassword
+            Port: 3306
+            PreferredBackupWindow: '20:15-20:45'
+            PreferredMaintenanceWindow: 'Sat:18:00-Sat:19:00'
+            ScalingConfiguration:
+                AutoPause: true
+                MaxCapacity: !Ref MaxCapacity
+                MinCapacity: 2
+                SecondsUntilAutoPause: !Ref SecondsUntilAutoPause
+            Tags:
+                - Key: 'Name'
+                  Value: !Join
+                      - '-'
+                      - - !Ref TagName
+                        - !Ref Environment
+                        - 'aurora'
+                        - 'cluster'
+            VpcSecurityGroupIds:
+                - !Ref AuroraSecurtyGroup
+    ProxySQLDnsRecord:
+        Type: AWS::Route53::RecordSet
+        Properties:
+            HostedZoneId: !Ref HostedZoneId 
+            Name: !Ref DNSName
+            Type: A
+            TTL: '900'
+            ResourceRecords:
+                - !Ref ProxySQLGlobalIp
