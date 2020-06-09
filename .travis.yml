@@ -18,6 +18,6 @@ script:
   - ansible-lint ansible/site.yml
   - cd ansible/inventories && pylint ec2.py
   - python -m unittest tests.test_ec2 -v
-  - cd ../../aws/lambda/ && pylint console_login_check.py
+  - cd ../../aws/lambda/console_login_check && pylint console_login_check.py
   - python -m unittest tests.test_console_login_check -v
   - cd ../../aws/cloudformation && cfn-lint validate vpc.template.yaml
