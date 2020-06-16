@@ -74,10 +74,116 @@ def start_stop_ec2_instance(ec2_target):
     logger.info("start_stop_ec2_instance is end.")
 
 
+def get_rds_aurora_target_list():
+    None #TODO
+
+
+def start_stop_rds_aurora_instance(rds_aurora_target):
+    None #TODO
+
+
+def start_aurora_cluster(db_name):
+    try:
+        response = rds.start_db_cluster(DBClusterIdentifier=db_name)
+        logger.info('response: ' + str(response))
+        logger.info(db_name + ' is start.')
+    except:
+        logging.info(traceback.format_exc())
+
+
+def stop_aurora_cluster(db_name):
+    try:
+        response = rds.stop_db_cluster(DBClusterIdentifier=db_name)
+        logger.info('response: ' + str(response))
+        logger.info(db_name + ' is stop.')
+    except:
+        logging.info(traceback.format_exc())
+
+
+def start_rds_instance(db_name):
+    try:
+        response = rds.start_db_instance(DBInstanceIdentifier=db_name)
+        logger.info('response: ' + str(response))
+        logger.info(db_name + ' is start.')
+    except:
+        logging.info(traceback.format_exc())
+
+
+def stop_rds_instance(db_name):
+    try:
+        response = rds.stop_db_instance(DBInstanceIdentifier=db_name)
+        logger.info('response: ' + str(response))
+        logger.info(db_name + ' is stop.')
+    except:
+        logging.info(traceback.format_exc())
+
+
+def start_db(db_name):
+    logging.info('looking for ' + db_name)
+    response = rds.describe_db_instances(
+        Filters=[
+            {
+                'Name': 'db-instance-id',
+                'Values': [
+                        db_name,
+                ]
+            }
+        ]
+    )
+    if response['DBInstances']:
+        start_rds_instance(db_name)
+        return
+    response = rds.describe_db_clusters(
+        Filters=[
+            {
+                'Name': 'db-cluster-id',
+                        'Values': [
+                            db_name,
+                        ]
+            }
+        ]
+    )
+    if response['DBClusters']:
+        start_aurora_cluster(db_name)
+        return
+    logging.info(db_name + ' is not exist.')
+
+
+def stop_db(db_name):
+    logging.info('looking for ' + db_name)
+    response = rds.describe_db_instances(
+        Filters=[
+            {
+                'Name': 'db-instance-id',
+                'Values': [
+                        db_name,
+                ]
+            }
+        ]
+    )
+    if response['DBInstances']:
+        stop_rds_instance(db_name)
+        return
+    response = rds.describe_db_clusters(
+        Filters=[
+            {
+                'Name': 'db-cluster-id',
+                        'Values': [
+                            db_name,
+                        ]
+            }
+        ]
+    )
+    if response['DBClusters']:
+        stop_aurora_cluster(db_name)
+        return
+    logging.info(db_name + ' is not exist.')
+
+
 def lambda_handler(event, context):
     logger.info("lambda function is start.")
     for ec2_target in get_ec2_target_list():
         start_stop_ec2_instance(ec2_target)
-    #for rds_aurora_target in get_rds_aurora_target_list():
-    #    start_stop_rds_aurora_instance(rds_aurora_target)
+    for rds_aurora_target in get_rds_aurora_target_list():
+        start_stop_rds_aurora_instance(rds_aurora_target)
     logger.info("lambda function is end.")
