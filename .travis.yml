@@ -3,19 +3,9 @@ python:
   - "3.6"
 cache: 
   pip: true
-  directories:
-  - node_modules  
 install:
-  - pip install ansible pylint boto3 ruamel.yaml
-before_script:
-  - pushd ../
-  - git clone https://github.com/willthames/ansible-lint.git
-  - export PYTHONPATH=$PYTHONPATH:`pwd`/ansible-lint/lib
-  - export PATH=$PATH:`pwd`/ansible-lint/bin
-  - npm install -g cfn-lint
+  - pip install ansible pylint boto3 cfn-lint ruamel.yaml
 script:
-  - popd
-  - python -m unittest tests.test_ec2 -v
-  - cd ../../aws/lambda/console_login_check && pylint console_login_check.py
+  - cd aws/lambda/console_login_check && pylint console_login_check.py
   - python -m unittest tests.test_console_login_check -v
   - cd ../../aws/cloudformation && cfn-lint validate vpc.template.yaml
