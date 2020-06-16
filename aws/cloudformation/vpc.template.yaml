@@ -221,7 +221,6 @@ Resources:
                         - !Ref Environment
     RoutePublic:
         Type: 'AWS::EC2::Route'
-        DependsOn: InternetGateway
         Properties:
             RouteTableId:
                 !Ref RouteTablePublic
