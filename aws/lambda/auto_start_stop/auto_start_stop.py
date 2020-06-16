@@ -74,11 +74,19 @@ def start_stop_ec2_instance(ec2_target):
     logger.info("start_stop_ec2_instance is end.")
 
 
-def get_rds_aurora_target_list():
+def get_rds_target_list():
     None #TODO
 
 
-def start_stop_rds_aurora_instance(rds_aurora_target):
+def get_aurora_target_list():
+    None #TODO
+
+
+def start_stop_rds_instance(rds_target):
+    None #TODO
+
+
+def start_stop_aurora_cluster(aurora_target):
     None #TODO
 
 
@@ -184,6 +192,8 @@ def lambda_handler(event, context):
     logger.info("lambda function is start.")
     for ec2_target in get_ec2_target_list():
         start_stop_ec2_instance(ec2_target)
-    for rds_aurora_target in get_rds_aurora_target_list():
-        start_stop_rds_aurora_instance(rds_aurora_target)
+    for rds_target in get_rds_target_list():
+        start_stop_rds_instance(rds_target)
+    for aurora_target in get_aurora_target_list():
+        start_stop_aurora_cluster(aurora_target)
     logger.info("lambda function is end.")
