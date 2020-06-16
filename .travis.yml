@@ -6,6 +6,8 @@ cache:
 install:
   - pip install ansible pylint boto3 cfn-lint ruamel.yaml
 script:
+  - pushd
   - cd aws/lambda/console_login_check && pylint console_login_check.py
   - python -m unittest tests.test_console_login_check -v
-  - cd ../../aws/cloudformation && cfn-lint validate vpc.template.yaml
+  - popd
+  - cd  aws/cloudformation && cfn-lint validate vpc.template.yaml
