@@ -100,6 +100,7 @@ class ConsoleLoginCheck:
             response.read().decode("utf-8")
 
 def lambda_handler(event, context):
+    #pylint: disable=unused-argument
     """
     メイン関数
     """
