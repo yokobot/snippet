@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  auto-start-stop
+
+  Sample SAM Template for auto-start-stop
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 60
+
+Resources:
+  AutoStartStopFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: auto_start_stop/
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      Role: !GetAtt  AutoStartStopFunctionRole.Arn
+  AutoStartStopFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonEC2FullAccess'
+        - 'arn:aws:iam::aws:policy/AmazonRDSFullAccess'
+        - 'arn:aws:iam::aws:policy/AWSLambdaExecute'
+      Path: "/"
+  AutoStartStopEventRule:
+    Type: AWS::Events::Rule
+    Properties: 
+      Description: 'Auto Start Stop.'
+      #EventBusName: 'auto_start_stop'
+      Name: 'auto_start_stop'
+      #RoleArn: String
+      ScheduleExpression: 'cron(0 * * * ? *)'
+      State: 'ENABLED'
+      Targets: 
+        - 
+          Arn: !GetAtt AutoStartStopFunction.Arn 
+          Id: 'auto_start_stop'
+          #Input: String
+          #InputPath: String
+          #InputTransformer: 
+          #  InputTransformer
+          #RoleArn: String
+  PermissionForEventsToInvokeLambda: 
+    Type: AWS::Lambda::Permission
+    Properties: 
+      FunctionName: !Ref AutoStartStopFunction
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt AutoStartStopEventRule.Arn
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  AutoStartStopFunction:
+    Description: "Lambda Function ARN"
+    Value: !GetAtt AutoStartStopFunction.Arn
+  AutoStartStopFunctionIamRole:
+    Description: "Implicit IAM Role created for Lambda function"
+    Value: !GetAtt AutoStartStopFunctionRole.Arn
