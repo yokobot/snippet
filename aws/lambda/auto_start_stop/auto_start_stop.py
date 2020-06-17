@@ -67,12 +67,13 @@ def start_stop_ec2_instance(ec2_target):
         logger.info("StartTime or StopTime is not set.")
         return
     if str(now.hour) == str(response['Tags'][0]['Value']):
-        logger.info("%s is starting.", ec2_target)
-        ec2.start_instances(
-            InstanceIds=[
-                ec2_target
-            ]
-        )
+        if 0 <= now.weekday() >= 4:
+            logger.info("%s is starting.", ec2_target)
+            ec2.start_instances(
+                InstanceIds=[
+                    ec2_target
+                ]
+            )
     if str(now.hour) == str(response['Tags'][1]['Value']):
         logger.info("%s is stopping.", ec2_target)
         print("%s is stopping." % ec2_target)
@@ -136,10 +137,11 @@ def start_stop_rds_instance(target, db_type):
             for start_tag in response['TagList']:
                 if start_tag['Key'] == 'StartTime':
                     if str(now.hour) == start_tag['Value']:
-                        if db_type == 'RDS':
-                            start_rds_instance(target)
-                        elif db_type == 'AURORA':
-                            start_aurora_cluster(target)
+                        if 0 <= now.weekday() >= 4:
+                            if db_type == 'RDS':
+                                start_rds_instance(target)
+                            elif db_type == 'AURORA':
+                                start_aurora_cluster(target)
                 elif start_tag['Key'] == 'StopTime':
                     if str(now.hour) == start_tag['Value']:
                         if db_type == 'RDS':
