@@ -20,13 +20,11 @@ jobs:
             # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
             - uses: actions/checkout@v2
 
-            - name: Change Directory
-              run: cd aws/sam/auto-start-stop/
-
             - name: sam build
               uses: TractorZoom/sam-cli-action@master
               with:
                 sam_command: "build"
+                directory: "aws/sam/auto-start-stop/"
               env:
                 AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
                 AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -36,6 +34,7 @@ jobs:
               uses: TractorZoom/sam-cli-action@master
               with:
                 sam_command: "deploy"
+                directory: "aws/sam/auto-start-stop/"
               env:
                 AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
                 AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
