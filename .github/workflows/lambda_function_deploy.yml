@@ -20,17 +20,23 @@ jobs:
             # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
             - uses: actions/checkout@v2
 
-            - name: AWS cli install action
-              uses: chrislennon/action-aws-cli@1.1
+            - name: Change Directory
+              run: cd aws/sam/auto-start-stop/
 
-            # Runs a single command using the runners shell
-            - name: Run a one-line script
-              run: echo "${{ secrets.HOGE }}"
+            - name: sam build
+              uses: TractorZoom/sam-cli-action@master
+              with:
+                sam_command: "build"
+              env:
+                AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
 
-            # Runs a set of commands using the runners shell
-            #- name: Run a multi-line script
-            #  run: |
-            #      aws ec2 describe-instances
-            #  env:
-            #      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-            #      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            - name: sam deploy
+              uses: TractorZoom/sam-cli-action@master
+              with:
+                sam_command: "deploy"
+              env:
+                AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
