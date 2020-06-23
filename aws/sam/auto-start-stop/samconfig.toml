@@ -3,7 +3,7 @@ version = 0.1
 [default.deploy]
 [default.deploy.parameters]
 stack_name = "auto-start-stop"
-s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-163oj0cgidt5m"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-yokobot"
 s3_prefix = "auto-start-stop"
 region = "ap-northeast-1"
 confirm_changeset = true
