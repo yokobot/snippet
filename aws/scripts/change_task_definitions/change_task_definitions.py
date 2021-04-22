@@ -15,7 +15,7 @@ def get_task_definitions(task_family_name):
 
 def change_task_definitions(td):
     for cd in td['taskDefinition']['containerDefinitions']:
-        if 0 != len(cd['secrets']):
+        if cd.get('secrets'):
             cd['secrets'].append(NEW_SECRETS)
     print(td)
     return(td)
