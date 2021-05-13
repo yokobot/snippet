@@ -2,7 +2,7 @@
 
 import boto3
 
-SECRET_KEY_NAME = 'MIIDAS_SES_PASSWORD'
+SECRET_KEY_NAME = ''
 
 ecs = boto3.client('ecs')
 
@@ -32,7 +32,6 @@ def check_task_definitions(task_family_name_array):
                 for secret in cd['secrets']:
                     if secret['name'] == SECRET_KEY_NAME:
                         print(task_family_name)
-
 
 def main():
     check_task_definitions(list_task_definition_families())
