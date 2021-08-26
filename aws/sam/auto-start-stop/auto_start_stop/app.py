@@ -31,9 +31,9 @@ def get_ec2_target_list():
                 if tag['Key'] == 'AutoStartStop' and tag['Value'] == 'true':
                     ec2_target_list.append(instance['InstanceId'])
     if ec2_target_list == []:
-        logger.info("EC2 target is not exsit.")
+        logger.info("EC2 target is not exist.")
     else:
-        logger.info("EC2 tagets list %s", ec2_target_list)
+        logger.info("EC2 targets list %s", ec2_target_list)
     logger.info("get_ec2_target_list is end.")
     return ec2_target_list
 
@@ -45,7 +45,7 @@ def start_stop_ec2_instance(ec2_target):
     logger.info("start_stop_ec2_instance is start.")
     jst = timezone(timedelta(hours=9), 'JST')
     now = datetime.now(jst)
-    logger.info("Exec time is %s oclock.", now.hour)
+    logger.info("Exec time is %s .", now.hour)
     response = ec2.describe_tags(
         Filters=[
             {
@@ -96,9 +96,9 @@ def get_rds_target_list():
     for db_instance in response['DBInstances']:
         rds_target_list.append(db_instance['DBInstanceIdentifier'])
     if rds_target_list == []:
-        logger.info("RDS target is not exsit.")
+        logger.info("RDS target is not exist.")
     else:
-        logger.info("RDS tagets list %s", rds_target_list)
+        logger.info("RDS targets list %s", rds_target_list)
     logger.info("get_rds_target_list is end.")
     return rds_target_list
 
@@ -113,9 +113,9 @@ def get_aurora_target_list():
     for db_cluster in response['DBClusters']:
         aurora_target_list.append(db_cluster['DBClusterIdentifier'])
     if aurora_target_list == []:
-        logger.info('AURORA target is not exsit.')
+        logger.info('AURORA target is not exist.')
     else:
-        logger.info("RDS tagets list %s", aurora_target_list)
+        logger.info("RDS targets list %s", aurora_target_list)
     logger.info('get_aurora_target_list is end.')
     return aurora_target_list
 
@@ -127,7 +127,7 @@ def start_stop_rds_instance(target, db_type):
     logger.info('start_stop_rds_instance is start.')
     jst = timezone(timedelta(hours=9), 'JST')
     now = datetime.now(jst)
-    logger.info("Exec time is %s oclock.", now.hour)
+    logger.info("Exec time is %s .", now.hour)
     response = rds.list_tags_for_resource(
         ResourceName=("arn:aws:rds:ap-northeast-1:%s:db:%s" % (AWS_ACCOUNT, target))
     )
