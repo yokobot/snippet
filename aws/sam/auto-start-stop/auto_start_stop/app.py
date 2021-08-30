@@ -1,6 +1,7 @@
 """AWS lambda function"""
 # coding: utf-8
 
+import inspect
 import logging
 import traceback
 from datetime import datetime, timedelta, timezone
@@ -15,6 +16,7 @@ logger.setLevel(logging.INFO)
 ec2 = boto3.client('ec2')
 ecs = boto3.client('ecs')
 rds = boto3.client('rds')
+auto_scaling = boto3.client('autoscaling')
 sts = boto3.client('sts')
 AWS_ACCOUNT = sts.get_caller_identity()['Account']
 
@@ -23,7 +25,7 @@ def get_ec2_target_list():
     """
     任意のタグを持つ EC2 の instance-id を配列で返す
     """
-    logger.info("get_ec2_target_list is start.")
+    logger.info(inspect.currentframe().f_code.co_name + ' is start.')
     response = ec2.describe_instances()
     ec2_target_list = []
     for group in response['Reservations']:
@@ -35,7 +37,7 @@ def get_ec2_target_list():
         logger.info("EC2 target is not exist.")
     else:
         logger.info("EC2 targets list %s", ec2_target_list)
-    logger.info("get_ec2_target_list is end.")
+    logger.info(inspect.currentframe().f_code.co_name + ' is end.')
     return ec2_target_list
 
 
@@ -43,7 +45,7 @@ def start_stop_ec2_instance(ec2_target):
     """
     タグ StartTime, StopTime で指定された時間に EC2 を起動停止する
     """
-    logger.info("start_stop_ec2_instance is start.")
+    logger.info(inspect.currentframe().f_code.co_name + ' is start.')
     jst = timezone(timedelta(hours=9), 'JST')
     now = datetime.now(jst)
     logger.info("Exec time is %s .", now.hour)
@@ -84,14 +86,14 @@ def start_stop_ec2_instance(ec2_target):
             ],
             Force=True
         )
-    logger.info("start_stop_ec2_instance is end.")
+    logger.info(inspect.currentframe().f_code.co_name + ' is end.')
 
 
 def get_ecs_target_list():
     """
     任意のタグを持つ ECS サービスの cluster_arn と service_arn を配列で返す
     """
-    logger.info("get_ec2_target_list is start.")
+    logger.info(inspect.currentframe().f_code.co_name + ' is start.')
     response = ecs.list_clusters()
     ecs_target_list = []
     for cluster_arn in response['clusterArns']:
@@ -112,7 +114,7 @@ def get_ecs_target_list():
                 for tag in response['services'][0]['tags']:
                     if tag['key'] == 'AutoStartStop' and tag['value'] == 'true':
                         ecs_target_list.append({'cluster': cluster_arn, 'service': response['services'][0]['serviceArn']})
-    logger.info("get_ec2_target_list is end.")
+    logger.info(inspect.currentframe().f_code.co_name + ' is end.')
     return ecs_target_list
 
 
@@ -120,7 +122,7 @@ def start_stop_ecs_service(ecs_target):
     """
     タグ StartTime, StopTime で指定された時間にタスク数を変更する
     """
-    logger.info("start_stop_ecs_service is start.")
+    logger.info(inspect.currentframe().f_code.co_name + ' is start.')
     jst = timezone(timedelta(hours=9), 'JST')
     now = datetime.now(jst)
     logger.info("Exec time is %s .", now.hour)
@@ -151,14 +153,14 @@ def start_stop_ecs_service(ecs_target):
             break
     else:
         logger.info("%s is not target instance.", ecs_target['service'])
-    logger.info("start_stop_ecs_service is end.")
+    logger.info(inspect.currentframe().f_code.co_name + ' is end.')
 
 
 def get_rds_target_list():
     """
     RDS インスタンスの DBInstanceIdentifier を配列で返す
     """
-    logger.info('get_rds_target_list is start.')
+    logger.info(inspect.currentframe().f_code.co_name + ' is start.')
     response = rds.describe_db_instances()
     rds_target_list = []
     for db_instance in response['DBInstances']:
@@ -167,7 +169,7 @@ def get_rds_target_list():
         logger.info("RDS target is not exist.")
     else:
         logger.info("RDS targets list %s", rds_target_list)
-    logger.info("get_rds_target_list is end.")
+    logger.info(inspect.currentframe().f_code.co_name + ' is end.')
     return rds_target_list
 
 
@@ -175,7 +177,7 @@ def get_aurora_target_list():
     """
     Aurora クラスターの DBClusterIdentifier を配列で返す
     """
-    logger.info('get_aurora_target_list is start.')
+    logger.info(inspect.currentframe().f_code.co_name + ' is start.')
     response = rds.describe_db_clusters()
     aurora_target_list = []
     for db_cluster in response['DBClusters']:
@@ -184,7 +186,7 @@ def get_aurora_target_list():
         logger.info('AURORA target is not exist.')
     else:
         logger.info("RDS targets list %s", aurora_target_list)
-    logger.info('get_aurora_target_list is end.')
+    logger.info(inspect.currentframe().f_code.co_name + ' is end.')
     return aurora_target_list
 
 
@@ -192,7 +194,7 @@ def start_stop_rds_instance(target, db_type):
     """
     タグ AutoStartStop, StartTime, StopTime で指定された時間に RDS インスタンス, Aurora クラスターを起動停止する
     """
-    logger.info('start_stop_rds_instance is start.')
+    logger.info(inspect.currentframe().f_code.co_name + ' is start.')
     jst = timezone(timedelta(hours=9), 'JST')
     now = datetime.now(jst)
     logger.info("Exec time is %s .", now.hour)
@@ -270,6 +272,69 @@ def stop_rds_instance(rds_target):
         logging.info(traceback.format_exc())
 
 
+def get_auto_scaling_target_list():
+    """
+    任意のタグを持つ Auto Scaling の AutoScalingGroupName と DesiredCapacity を配列で返す
+    """
+    logger.info(inspect.currentframe().f_code.co_name + ' is start.')
+    response = auto_scaling.describe_auto_scaling_groups()
+    asg_target_list = []
+    for asg in response['AutoScalingGroups']:
+        tag_dir = {}
+        for tag in asg['Tags']:
+            if tag['Key'] == 'AutoStartStop' and tag['Value'] == 'true':
+                tag_dir['name'] = asg['AutoScalingGroupName']
+            elif tag['Key'] == 'DesiredCapacity':
+                tag_dir['desired_capacity'] = tag['Value']
+        if tag_dir.get('name') and tag_dir.get('desired_capacity'):
+            asg_target_list.append(tag_dir)
+    logger.info(inspect.currentframe().f_code.co_name + ' is end.')
+    return(asg_target_list)
+
+
+def start_stop_auto_scaling(asg_target):
+    """
+    タグ StartTime, StopTime で指定された時間にインスタンス数を変更する
+    """
+    logger.info(inspect.currentframe().f_code.co_name + ' is start.')
+    jst = timezone(timedelta(hours=9), 'JST')
+    now = datetime.now(jst)
+    logger.info("Exec time is %s .", now.hour)
+    response = auto_scaling.describe_tags(
+        Filters=[
+            {
+                "Name": "key",
+                'Values': [
+                    'StartTime',
+                    'StopTime'
+                ]
+            },
+            {
+                "Name": "auto-scaling-group",
+                'Values': [
+                    asg_target['name']
+                ]
+            }
+        ]
+    )
+    if not len(response['Tags']) == 2:
+        logger.info("StartTime or StopTime is not set.")
+        return
+    if str(now.hour) == str(response['Tags'][0]['Value']):
+        if 0 <= int(now.weekday()) <= 4:
+            logger.info("%s is starting.", asg_target['name'])
+            auto_scaling.set_desired_capacity(
+                AutoScalingGroupName=asg_target['name'],
+                DesiredCapacity=asg_target['desired_capacity']
+            )
+    if str(now.hour) == str(response['Tags'][1]['Value']):
+        logger.info("%s is stopping.", asg_target['name'])
+        auto_scaling.set_desired_capacity(
+            AutoScalingGroupName=asg_target['name'],
+            DesiredCapacity=0
+        )
+    logger.info(inspect.currentframe().f_code.co_name + ' is end.')
+
 def lambda_handler(event, context):
     #pylint: disable=unused-argument
     """
@@ -284,4 +349,6 @@ def lambda_handler(event, context):
         start_stop_rds_instance(rds_target, 'RDS')
     for aurora_target in get_aurora_target_list():
         start_stop_rds_instance(aurora_target, 'AURORA')
+    for asg_target in get_auto_scaling_target_list():
+        start_stop_auto_scaling(asg_target)
     logger.info("lambda function is end.")
