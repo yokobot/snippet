@@ -198,8 +198,12 @@ def start_stop_rds_instance(target, db_type):
     jst = timezone(timedelta(hours=9), 'JST')
     now = datetime.now(jst)
     logger.info("Exec time is %s .", now.hour)
+    if db_type == 'RDS':
+        arn_type = 'db'
+    elif db_type == 'AURORA':
+        arn_type = 'cluster'
     response = rds.list_tags_for_resource(
-        ResourceName=("arn:aws:rds:ap-northeast-1:%s:db:%s" % (AWS_ACCOUNT, target))
+        ResourceName=("arn:aws:rds:ap-northeast-1:%s:%s:%s" % (AWS_ACCOUNT, arn_type, target))
     )
     for tag in response['TagList']:
         if tag['Key'] == 'AutoStartStop' and tag['Value'] == 'true':
@@ -221,7 +225,7 @@ def start_stop_rds_instance(target, db_type):
             break
     else:
         logger.info('%s is not target instance.', target)
-    logger.info('start_stop_rds_instance is end.')
+    logger.info(inspect.currentframe().f_code.co_name + ' is end.')
 
 
 def start_aurora_cluster(db_name):
