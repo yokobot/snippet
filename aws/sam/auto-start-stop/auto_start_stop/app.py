@@ -329,7 +329,7 @@ def start_stop_auto_scaling(asg_target):
             logger.info("%s is starting.", asg_target['name'])
             auto_scaling.set_desired_capacity(
                 AutoScalingGroupName=asg_target['name'],
-                DesiredCapacity=asg_target['desired_capacity']
+                DesiredCapacity=int(asg_target['desired_capacity'])
             )
     if str(now.hour) == str(response['Tags'][1]['Value']):
         logger.info("%s is stopping.", asg_target['name'])
