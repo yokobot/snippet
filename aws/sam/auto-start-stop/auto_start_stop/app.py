@@ -136,11 +136,13 @@ def start_stop_ecs_service(ecs_target):
                 if start_tag['key'] == 'StartTime':
                     if str(now.hour) == start_tag['value']:
                         if 0 <= int(now.weekday()) <= 4:
-                            response = ecs.update_service(
-                                cluster=ecs_target['cluster'],
-                                service=ecs_target['service'],
-                                desiredCount=1
-                            )
+                            for desired_capacity_tag in response['tags']:
+                                if desired_capacity_tag['key'] == 'DesiredCapacity':
+                                    response = ecs.update_service(
+                                        cluster=ecs_target['cluster'],
+                                        service=ecs_target['service'],
+                                        desiredCount=int(desired_capacity_tag['value'])
+                                    )
                             logger.info(response)
                 elif start_tag['key'] == 'StopTime':
                     if str(now.hour) == start_tag['value']:
