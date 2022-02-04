@@ -1,4 +1,4 @@
-![DEPLOY](https://github.com/yokobot/snippet/workflows/DEPLOY/badge.svg?branch=master)
+![BUILD](https://github.com/yokobot/snippet/workflows/DEPLOY/badge.svg?branch=master)
 
 # snippet
 
